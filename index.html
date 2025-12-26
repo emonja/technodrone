@@ -2,221 +2,213 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ROOT://</title>
     <style>
+        :root {
+            --bg: #000;
+            --dim-text: #555; 
+            --active-text: #eee;
+            --row-border: #1a1a1a;
+        }
+
         body {
-            background-color: #000;
-            color: #444;
+            background-color: var(--bg);
+            color: var(--dim-text);
             font-family: 'Courier New', monospace;
-            padding: 40px;
-            font-size: 13px;
+            padding: env(safe-area-inset-top) 25px env(safe-area-inset-bottom) 25px;
+            font-size: 14px;
             line-height: 1.6;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevents bounce scroll on iOS */
         }
 
-        /* Scanline effect overlay */
+        /* Scanline effect */
         body::before {
             content: " ";
-            display: block;
             position: fixed;
             top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
-            background-size: 100% 2px, 3px 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 3px;
             pointer-events: none;
             z-index: 100;
         }
 
         header {
-            border-bottom: 1px solid #111;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 1px solid var(--row-border);
+            padding: 20px 0;
+            margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            font-size: 12px;
             min-height: 1.6em;
         }
 
         .dir-listing {
-            max-width: 700px;
+            flex-grow: 1;
+            transition: transform 0.1s ease-out;
         }
 
         .row {
             display: grid;
-            grid-template-columns: 120px 80px auto;
-            gap: 20px;
-            margin-bottom: 8px;
-            transition: color 0.2s;
-            opacity: 0; 
+            grid-template-columns: 100px 60px auto;
+            gap: 10px;
+            padding: 15px 0;
+            border-bottom: 1px solid #080808;
+            opacity: 0;
         }
 
-        .row.visible {
-            opacity: 1;
-        }
+        .row.visible { opacity: 1; transition: opacity 0.5s ease; }
 
         .row a {
-            color: #666;
+            color: var(--active-text);
             text-decoration: none;
-            position: relative;
+            display: block;
         }
 
-        .row:hover {
-            color: #eee;
+        /* --- GLITCH EFFECTS --- */
+        
+        @keyframes rip {
+            0% { transform: skew(0deg); filter: contrast(100%); }
+            10% { transform: skew(15deg); filter: contrast(300%) brightness(2); clip-path: inset(10% 0 30% 0); }
+            30% { transform: skew(-15deg); clip-path: inset(40% 0 10% 0); }
+            50% { transform: skew(0deg); filter: contrast(100%); clip-path: inset(0 0 0 0); }
         }
 
-        .row:hover a {
-            color: #fff;
-            text-shadow: 0 0 5px rgba(255,255,255,0.5);
-        }
-
-        .row:hover a::before {
-            content: ">";
-            position: absolute;
-            left: -15px;
-        }
-
-        .status {
-            color: #222;
-            font-size: 10px;
-        }
-
-        .row:hover .status {
-            color: #444;
+        .glitch-active {
+            animation: rip 0.25s step-end;
         }
 
         footer {
-            margin-top: auto;
-            padding-top: 50px;
-            color: #1a1a1a;
+            padding: 20px 0;
+            color: #222;
             font-size: 10px;
+            border-top: 1px solid var(--row-border);
         }
 
-        /* FIXED SOUND BUTTON */
         #snd-ctrl {
             position: fixed;
-            bottom: 30px;
-            right: 40px;
+            bottom: calc(env(safe-area-inset-bottom) + 20px);
+            right: 20px;
             z-index: 101;
             cursor: pointer;
-            color: #333;
-            font-size: 10px;
-            padding: 5px 10px;
-            border: 1px solid #111;
-            letter-spacing: 1px;
-            transition: all 0.3s;
-        }
-
-        #snd-ctrl:hover {
-            color: #666;
-            border-color: #333;
+            color: #444;
+            font-size: 11px;
+            padding: 12px 18px;
+            border: 1px solid #333;
+            background: rgba(0,0,0,0.9);
+            letter-radius: 2px;
         }
 
         #snd-ctrl.active {
             color: #fff;
-            text-shadow: 0 0 5px #fff;
-            border-color: #444;
+            border-color: #666;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
         }
 
-        .blink {
-            animation: blinker 1s step-start infinite;
-        }
-
-        @keyframes blinker {
-            50% { opacity: 0; }
-        }
+        .blink { animation: blinker 1s step-start infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
 <audio id="handshake-audio" loop src="sounds/hadshake.mp3"></audio>
 
-<div id="snd-ctrl" onclick="toggleSnd()">[ AUDIO: OFF ]</div>
+<div id="snd-ctrl" onclick="toggleSnd()">AUDIO: OFF</div>
 
-<header id="header-typewriter"></header>
+<header id="header-text"></header>
 
-<div class="dir-listing">
-    <div class="row" id="r0" style="color: #222; margin-bottom: 15px; border-bottom: 1px solid #080808;">
-        <span>TIMESTAMP</span>
-        <span>TYPE</span>
-        <span>IDENTIFIER</span>
+<div class="dir-listing" id="listing">
+    <div class="row" id="r0" style="color: #333;">
+        <span>DATE</span><span>TYPE</span><span>ID</span>
     </div>
 
     <div class="row" id="r1">
-        <span>2024.12.25</span>
-        <span>[DIR]</span>
+        <span>24.12.25</span><span>[DIR]</span>
         <a href="bewegungsrausch/code.html">BEWEGUNGSRAUSCH</a>
     </div>
 
     <div class="row" id="r2">
-        <span>2025.12.25</span>
-        <span>[DIR]</span>
+        <span>25.12.25</span><span>[DIR]</span>
         <a href="mittwochraum/code.html">MITTWOCHRAUM</a>
     </div>
 
     <div class="row" id="r3">
-        <span>2025.12.26</span>
-        <span>[MOD]</span>
+        <span>26.12.25</span><span>[MOD]</span>
         <a href="zwischenraumtuning/code.html">ZWISCHENRAUMTUNING</a>
     </div>
 
     <div class="row" id="r4" style="opacity: 0.15;">
-        <span>????.??.??</span>
-        <span>[???]</span>
-        <span class="status">ENCRYPTED_SECTOR_LOCKED</span>
-    </div>
-
-    <div class="row" id="r5" style="opacity: 0.05;">
-        <span>0000.00.00</span>
-        <span>[NULL]</span>
-        <span class="status">SIGNAL_LOST</span>
+        <span>????.??.??</span><span>[???]</span><span>ENCRYPTED_SECTOR</span>
     </div>
 </div>
 
-<footer>
-    RHIZOME_V.01 // ALL_MEDIA_FRAGMENTS_ACCOUNTED_FOR <br>
-    S_SYS_STATUS: NOMINAL // LOCAL_DRIVE: 0% FREE
+<footer id="footer-bits">
+    RHIZOME_V.01_MOB <br>
+    S_SYS_STATUS: NOMINAL
 </footer>
 
 <script>
-    const headerText = "Index: /Mesh/Archive_01";
-    const headerEl = document.getElementById('header-typewriter');
+    let headerStr = "ROOT://ARCHIVE_01";
+    const headerEl = document.getElementById('header-text');
+    const listingEl = document.getElementById('listing');
     const audio = document.getElementById('handshake-audio');
     const sndBtn = document.getElementById('snd-ctrl');
 
+    // 1. Initial Typewriter
     let charIdx = 0;
     function type() {
-        if (charIdx < headerText.length) {
-            headerEl.innerHTML += headerText.charAt(charIdx);
+        if (charIdx < headerStr.length) {
+            headerEl.innerHTML += headerStr.charAt(charIdx);
             charIdx++;
-            setTimeout(type, 50);
+            setTimeout(type, 60);
         } else {
             headerEl.innerHTML += ' <span class="blink">_</span>';
             revealRows();
+            startCorrupting();
         }
     }
 
     function revealRows() {
-        const rowIds = ['r0', 'r1', 'r2', 'r3', 'r4', 'r5'];
-        rowIds.forEach((id, index) => {
+        ['r0', 'r1', 'r2', 'r3', 'r4'].forEach((id, index) => {
             setTimeout(() => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('visible');
-            }, index * 150);
+            }, index * 120);
         });
+    }
+
+    // 2. Interaction Glitch (Mobile Touch)
+    document.addEventListener('touchstart', () => {
+        listingEl.classList.add('glitch-active');
+        setTimeout(() => listingEl.classList.remove('glitch-active'), 250);
+    }, {passive: true});
+
+    // 3. Temporal Decay (Corrupting the Header)
+    function startCorrupting() {
+        const symbols = "!@#$%^&*()_+-=█▒░";
+        setInterval(() => {
+            if (Math.random() > 0.8) { // 20% chance every 4 seconds
+                let arr = headerStr.split("");
+                let randIdx = Math.floor(Math.random() * arr.length);
+                arr[randIdx] = symbols[Math.floor(Math.random() * symbols.length)];
+                headerEl.firstChild.textContent = arr.join(""); // Keep the cursor span
+            }
+        }, 4000);
     }
 
     function toggleSnd() {
         if (audio.paused) {
             audio.play();
-            sndBtn.innerHTML = "[ AUDIO: ON ]";
+            sndBtn.innerHTML = "AUDIO: ON";
             sndBtn.classList.add('active');
         } else {
             audio.pause();
-            sndBtn.innerHTML = "[ AUDIO: OFF ]";
+            sndBtn.innerHTML = "AUDIO: OFF";
             sndBtn.classList.remove('active');
         }
     }

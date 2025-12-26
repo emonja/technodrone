@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>MITTWOCHRAUM</title>
     <style>
         body {
@@ -11,72 +12,89 @@
             margin: 0;
             height: 100vh;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* The Return Link - Forced to the top layer */
+        /* Fixed Navigation */
         .nav-wrapper {
             position: fixed;
-            top: 20px;
+            top: calc(env(safe-area-inset-top) + 15px);
             right: 20px;
-            z-index: 9999; /* Higher than everything else */
+            z-index: 9999;
         }
 
         .nav-return {
             text-decoration: none;
-            color: #333; /* Dim but visible gray */
+            color: #1a1a1a; /* Almost black */
             font-size: 11px;
             letter-spacing: 1px;
+            transition: color 0.5s;
         }
 
-        .nav-return:hover {
-            color: #666;
-            text-decoration: underline;
-        }
-
-        .pixel {
-            position: fixed;
-            width: 1px;
-            height: 1px;
-            background: #444;
-            z-index: 100;
-            pointer-events: none;
+        /* Reveal navigation on body hold or hover */
+        body:active .nav-return, .nav-return:hover {
+            color: #444;
         }
 
         h1 {
             position: absolute;
-            top: 20px;
+            top: calc(env(safe-area-inset-top) + 15px);
             left: 20px;
-            font-size: 12px;
-            letter-spacing: 0.3rem;
+            font-size: 10px;
+            letter-spacing: 0.5rem;
             text-transform: uppercase;
             font-weight: normal;
-            color: #1a1a1a;
+            color: #111;
         }
 
+        /* The Monolith Container */
         .player-container {
-            position: absolute;
-            top: 15%; 
-            left: 10%; 
-            filter: grayscale(100%) brightness(30%);
-            transition: filter 0.5s ease;
+            width: 85vw;
+            height: 85vw;
+            max-width: 500px;
+            max-height: 500px;
+            filter: grayscale(100%) brightness(20%);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(0.9) rotateY(10deg);
             z-index: 5;
+            border: 1px solid #080808;
         }
 
-        .player-container:hover {
+        /* Active state for mobile hold / Desktop hover */
+        .player-container.active, .player-container:hover {
             filter: grayscale(0%) brightness(100%);
+            transform: scale(1) rotateY(0deg);
+            box-shadow: 0 0 50px rgba(254, 126, 175, 0.1); /* Subtle pink glow from cover */
         }
 
         .text-fragment {
             position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: calc(env(safe-area-inset-bottom) + 40px);
             font-size: 11px;
-            color: #222;
+            color: #111;
             letter-spacing: 1px;
+            transition: color 1s;
         }
 
-        /* Scanline Overlay - Moved to lower z-index */
+        body:active .text-fragment {
+            color: #333;
+        }
+
+        /* Static Dead Pixels */
+        .pixel {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            background: #222;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Scanline Overlay */
         body::after {
             content: "";
             position: fixed;
@@ -94,19 +112,39 @@
         <a href="../index.html" class="nav-return">back_to_root</a>
     </div>
 
-    <div class="pixel" style="top: 15%; left: 85%;"></div>
-    <div class="pixel" style="top: 75%; left: 10%;"></div>
-    <div class="pixel" style="top: 45%; left: 45%;"></div>
+    <div class="pixel" style="top: 20%; left: 80%;"></div>
+    <div class="pixel" style="top: 70%; left: 15%;"></div>
+    <div class="pixel" style="top: 45%; left: 50%;"></div>
 
     <h1>Mittwochraum</h1>
 
-    <div class="player-container">
-        <iframe style="border: 0; width: 700px; height: 700px;" src="https://bandcamp.com/EmbeddedPlayer/track=2171250333/size=large/bgcol=333333/linkcol=fe7eaf/minimal=true/transparent=true/" seamless>
+    <div class="player-container" id="monolith">
+        <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/track=2171250333/size=large/bgcol=333333/linkcol=fe7eaf/minimal=true/transparent=true/" seamless>
             <a href="https://estebandelamonja.bandcamp.com/track/mittwochraum">Mittwochraum by Esteban De la Monja</a>
         </iframe>
     </div>
 
     <div class="text-fragment">yet everything changes.</div>
 
+    <script>
+        const monolith = document.getElementById('monolith');
+
+        // Mobile "Hold to Reveal" logic
+        document.body.addEventListener('touchstart', () => {
+            monolith.classList.add('active');
+        });
+
+        document.body.addEventListener('touchend', () => {
+            monolith.classList.remove('active');
+        });
+
+        // For desktop users who don't hover directly on the player
+        document.body.addEventListener('mousedown', () => {
+            monolith.classList.add('active');
+        });
+        document.body.addEventListener('mouseup', () => {
+            monolith.classList.remove('active');
+        });
+    </script>
 </body>
 </html>

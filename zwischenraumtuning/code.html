@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZWISCHENRAUMTUNING // SIGNAL</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .nav-wrapper {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .nav-return {
+            text-decoration: none;
+            color: #333;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        .nav-return:hover { color: #555; text-decoration: underline; }
+
+        .fragment { 
+            position: absolute; 
+            font-size: 11px; 
+            color: #222; 
+            max-width: 250px; 
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #noise-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            color: #111;
+            font-size: 10px;
+            opacity: 0.4;
+            z-index: 1;
+        }
+
+        .snd-module {
+            position: absolute;
+            background: #050505;
+            padding: 8px;
+            border: 1px solid #111;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 10;
+            width: 110px;
+        }
+
+        .btn-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* The Signal Dot */
+        .signal {
+            width: 4px;
+            height: 4px;
+            background: #111;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .playing + .signal {
+            background: #fff;
+            box-shadow: 0 0 5px #fff;
+            animation: signal-flicker 0.1s infinite alternate;
+        }
+
+        @keyframes signal-flicker {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+        }
+
+        button {
+            background: #000;
+            color: #444;
+            border: 1px solid #222;
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            cursor: pointer;
+            padding: 4px;
+            flex-grow: 1;
+            text-align: left;
+        }
+        button.playing { 
+            color: #fff; 
+            border-color: #555; 
+        }
+
+        input[type=range] {
+            width: 100%;
+            appearance: none;
+            background: #111;
+            height: 1px;
+            cursor: crosshair;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 4px;
+            height: 8px;
+            background: #444;
+        }
+
+        .cursor { animation: blink 1s step-start infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.3) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">back_to_root</a>
+    </div>
+
+    <div id="noise-layer"></div>
+
+    <div class="fragment" id="text1">
+        the 15-cent shimmer, the pause before the crank turns, the place where I wait for nothing.
+    </div>
+    
+    <div class="fragment" id="text2" style="letter-spacing: 2px;">
+        yet holds the entire journey?<span class="cursor">_</span>
+    </div>
+
+    <script>
+        const noiseLayer = document.getElementById('noise-layer');
+        const sounds = ['01', '02', '03', '04', '05', '06', '07'];
+
+        function generateNoise() {
+            let str = "";
+            const chars = "X01_/-?><{}[]!#";
+            for(let i=0; i<120; i++) {
+                let x = Math.random() * window.innerWidth;
+                let y = Math.random() * window.innerHeight;
+                let c = chars.charAt(Math.floor(Math.random() * chars.length));
+                str += `<span style="position:absolute; left:${x}px; top:${y}px">${c}</span>`;
+            }
+            noiseLayer.innerHTML = str;
+        }
+
+        function scatter(id, pad) {
+            const el = document.getElementById(id);
+            el.style.left = Math.random() * (window.innerWidth - pad) + "px";
+            el.style.top = Math.random() * (window.innerHeight - pad) + "px";
+        }
+
+        sounds.forEach((s, i) => {
+            const container = document.createElement('div');
+            container.className = 'snd-module';
+            container.id = `module-${i}`;
+            
+            const audio = new Audio(`sounds/${s}.mp3`);
+            audio.loop = true;
+
+            const row = document.createElement('div');
+            row.className = 'btn-row';
+
+            const btn = document.createElement('button');
+            btn.innerText = `S_0${s}`;
+
+            const sig = document.createElement('div');
+            sig.className = 'signal';
+
+            btn.onclick = () => {
+                // Resume AudioContext for modern browser policies
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const context = new AudioContext();
+                if (context.state === 'suspended') context.resume();
+
+                if(audio.paused) { 
+                    audio.play(); 
+                    btn.classList.add('playing'); 
+                } else { 
+                    audio.pause(); 
+                    btn.classList.remove('playing'); 
+                }
+            };
+
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = 0; slider.max = 1; slider.step = 0.01;
+            slider.value = 0.5;
+            slider.oninput = (e) => { audio.volume = e.target.value; };
+
+            row.appendChild(btn);
+            row.appendChild(sig);
+            container.appendChild(row);
+            container.appendChild(slider);
+            document.body.appendChild(container);
+            
+            scatter(`module-${i}`, 150);
+        });
+
+        window.onload = () => {
+            generateNoise();
+            scatter('text1', 300);
+            scatter('text2', 300);
+        };
+    </script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>BEWEGUNGSRAUSCH</title>
     <style>
       body {
@@ -12,90 +13,95 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        /* iPhone X Safe Areas */
+        padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
         height: 100vh;
         margin: 0;
         overflow: hidden;
         perspective: 1000px; 
+        box-sizing: border-box;
       }
 
-      /* Navigation - Consistent with the rhizome structure */
       .nav-wrapper {
         position: fixed;
-        top: 20px;
+        top: calc(env(safe-area-inset-top) + 10px);
         right: 20px;
         z-index: 9999;
       }
 
       .nav-return {
         text-decoration: none;
-        color: #333; /* Dim but functional */
+        color: #555; /* Slightly brighter for mobile visibility */
         font-size: 11px;
         letter-spacing: 1px;
-      }
-
-      .nav-return:hover {
-        color: #666;
-        text-decoration: underline;
+        padding: 10px; /* Bigger tap target */
       }
 
       h1 {
         font-size: 14px;
         letter-spacing: 0.5rem;
         text-transform: uppercase;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
         font-weight: normal;
         color: #444;
       }
 
+      /* Image container with reactive "Rip" animation */
       .media-container {
         filter: grayscale(100%) contrast(150%) brightness(70%);
         transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
-        max-width: 850px;
+        max-width: 100%;
         transform: rotateX(10deg) rotateY(-5deg); 
-        box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.9);
       }
 
-      .media-container:hover {
+      @keyframes rip-effect {
+            0% { transform: skew(0deg) rotateX(10deg) rotateY(-5deg); filter: contrast(100%); }
+            10% { transform: skew(10deg) scale(1.1); filter: contrast(300%) brightness(2); clip-path: inset(10% 0 30% 0); }
+            30% { transform: skew(-10deg); clip-path: inset(40% 0 10% 0); }
+            50% { transform: skew(0deg) rotateX(10deg) rotateY(-5deg); filter: contrast(100%); clip-path: inset(0 0 0 0); }
+      }
+
+      .glitch-active {
+          animation: rip-effect 0.2s step-end;
+      }
+
+      .player-box {
+        margin-top: 30px;
+        opacity: 0.4; /* Baseline higher for mobile visibility */
+        transition: opacity 1s;
+        width: 280px; /* Narrower for mobile */
+        filter: invert(100%) hue-rotate(180deg); 
+      }
+
+      /* On mobile, we use active instead of hover */
+      .media-container:active {
         filter: grayscale(0%) contrast(100%) brightness(100%);
         transform: rotateX(0deg) rotateY(0deg) scale(1.02);
       }
 
-      .player-box {
-        margin-top: 40px;
-        opacity: 0.15; 
-        transition: opacity 1s;
-        width: 320px;
-        filter: invert(100%) hue-rotate(180deg); 
-      }
-
-      .player-box:hover {
-        opacity: 1;
-        filter: invert(0%);
-      }
-
       .glitch-bits {
         position: absolute;
-        bottom: 10px;
+        bottom: calc(env(safe-area-inset-bottom) + 10px);
         font-size: 8px;
-        letter-spacing: 2px;
-        color: #111; 
+        letter-spacing: 1px;
+        color: #1a1a1a; 
         animation: flicker 4s infinite;
+        text-align: center;
+        width: 100%;
       }
 
       @keyframes flicker {
         0%, 100% { opacity: 0.1; }
         50% { opacity: 0.6; }
-        52% { opacity: 0.1; }
-        53% { opacity: 0.9; }
-        54% { opacity: 0.1; }
+        53% { opacity: 0.1; }
       }
 
-      /* Subtle scanline overlay */
       body::after {
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 50%);
+        background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.2) 50%);
         background-size: 100% 4px;
         pointer-events: none;
         z-index: 50;
@@ -110,7 +116,7 @@
 
     <h1>Bewegungsrausch</h1>
 
-    <div class="media-container">
+    <div class="media-container" id="visual">
         <img src="img.png" style="width: 100%; border: 1px solid #111;">
     </div>
 
@@ -121,8 +127,21 @@
     </div>
 
     <div class="glitch-bits">
-        COORD_52.5200_13.4050 // SYSTEM_MEMORY_LEAK // [REDACTED]
+        COORD_52.5200_13.4050 // SYSTEM_MEMORY_LEAK
     </div>
+
+    <script>
+        const visual = document.getElementById('visual');
+
+        // Touch Glitch
+        document.addEventListener('touchstart', (e) => {
+            // Only trigger if touching the image or background, not the player/link
+            if(e.target.tagName !== 'A' && e.target.tagName !== 'IFRAME') {
+                visual.classList.add('glitch-active');
+                setTimeout(() => visual.classList.remove('glitch-active'), 200);
+            }
+        }, {passive: true});
+    </script>
 
 </body>
 </html>

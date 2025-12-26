@@ -7,7 +7,7 @@
     <style>
         :root {
             --bg: #000;
-            --dim-text: #555; /* Higher visibility for mobile */
+            --dim-text: #555; 
             --active-text: #eee;
             --row-border: #1a1a1a;
         }
@@ -16,7 +16,6 @@
             background-color: var(--bg);
             color: var(--dim-text);
             font-family: 'Courier New', monospace;
-            /* iPhone X Safe Areas */
             padding: env(safe-area-inset-top) 25px env(safe-area-inset-bottom) 25px;
             font-size: 14px;
             line-height: 1.6;
@@ -25,10 +24,10 @@
             height: 100vh;
             margin: 0;
             box-sizing: border-box;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevents bounce scroll on iOS */
         }
 
-        /* Scanline effect - reduced opacity for mobile brightness */
+        /* Scanline effect */
         body::before {
             content: " ";
             position: fixed;
@@ -46,21 +45,21 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             font-size: 12px;
+            min-height: 1.6em;
         }
 
         .dir-listing {
             flex-grow: 1;
+            transition: transform 0.1s ease-out;
         }
 
         .row {
             display: grid;
-            /* Adjusted grid for narrow mobile screens */
             grid-template-columns: 100px 60px auto;
             gap: 10px;
-            padding: 12px 0;
+            padding: 15px 0;
             border-bottom: 1px solid #080808;
             opacity: 0;
-            transition: background 0.3s;
         }
 
         .row.visible { opacity: 1; transition: opacity 0.5s ease; }
@@ -69,19 +68,19 @@
             color: var(--active-text);
             text-decoration: none;
             display: block;
-            /* Larger touch target */
-            padding: 5px 0;
         }
 
-        /* Mobile specific: Active state instead of hover */
-        .row:active {
-            background-color: #0a0a0a;
+        /* --- GLITCH EFFECTS --- */
+        
+        @keyframes rip {
+            0% { transform: skew(0deg); filter: contrast(100%); }
+            10% { transform: skew(15deg); filter: contrast(300%) brightness(2); clip-path: inset(10% 0 30% 0); }
+            30% { transform: skew(-15deg); clip-path: inset(40% 0 10% 0); }
+            50% { transform: skew(0deg); filter: contrast(100%); clip-path: inset(0 0 0 0); }
         }
 
-        .status {
-            color: #222;
-            font-size: 10px;
-            align-self: center;
+        .glitch-active {
+            animation: rip 0.25s step-end;
         }
 
         footer {
@@ -91,7 +90,6 @@
             border-top: 1px solid var(--row-border);
         }
 
-        /* MOBILE AUDIO TOGGLE - Bigger for fingers */
         #snd-ctrl {
             position: fixed;
             bottom: calc(env(safe-area-inset-bottom) + 20px);
@@ -103,8 +101,7 @@
             padding: 12px 18px;
             border: 1px solid #333;
             background: rgba(0,0,0,0.9);
-            letter-spacing: 1px;
-            border-radius: 2px;
+            letter-radius: 2px;
         }
 
         #snd-ctrl.active {
@@ -123,65 +120,85 @@
 
 <div id="snd-ctrl" onclick="toggleSnd()">AUDIO: OFF</div>
 
-<header id="header-typewriter"></header>
+<header id="header-text"></header>
 
-<div class="dir-listing">
+<div class="dir-listing" id="listing">
     <div class="row" id="r0" style="color: #333;">
-        <span>DATE</span>
-        <span>TYPE</span>
-        <span>ID</span>
+        <span>DATE</span><span>TYPE</span><span>ID</span>
     </div>
 
     <div class="row" id="r1">
-        <span>24.12.25</span>
-        <span>[DIR]</span>
+        <span>24.12.25</span><span>[DIR]</span>
         <a href="bewegungsrausch/code.html">BEWEGUNGSRAUSCH</a>
     </div>
 
     <div class="row" id="r2">
-        <span>25.12.25</span>
-        <span>[DIR]</span>
+        <span>25.12.25</span><span>[DIR]</span>
         <a href="mittwochraum/code.html">MITTWOCHRAUM</a>
     </div>
 
     <div class="row" id="r3">
-        <span>26.12.25</span>
-        <span>[MOD]</span>
+        <span>26.12.25</span><span>[MOD]</span>
         <a href="zwischenraumtuning/code.html">ZWISCHENRAUMTUNING</a>
+    </div>
+
+    <div class="row" id="r4" style="opacity: 0.15;">
+        <span>????.??.??</span><span>[???]</span><span>ENCRYPTED_SECTOR</span>
     </div>
 </div>
 
-<footer>
+<footer id="footer-bits">
     RHIZOME_V.01_MOB <br>
     S_SYS_STATUS: NOMINAL
 </footer>
 
 <script>
-    const headerText = "ROOT://ARCHIVE_01";
-    const headerEl = document.getElementById('header-typewriter');
+    let headerStr = "ROOT://ARCHIVE_01";
+    const headerEl = document.getElementById('header-text');
+    const listingEl = document.getElementById('listing');
     const audio = document.getElementById('handshake-audio');
     const sndBtn = document.getElementById('snd-ctrl');
 
+    // 1. Initial Typewriter
     let charIdx = 0;
     function type() {
-        if (charIdx < headerText.length) {
-            headerEl.innerHTML += headerText.charAt(charIdx);
+        if (charIdx < headerStr.length) {
+            headerEl.innerHTML += headerStr.charAt(charIdx);
             charIdx++;
             setTimeout(type, 60);
         } else {
             headerEl.innerHTML += ' <span class="blink">_</span>';
             revealRows();
+            startCorrupting();
         }
     }
 
     function revealRows() {
-        const rowIds = ['r0', 'r1', 'r2', 'r3'];
-        rowIds.forEach((id, index) => {
+        ['r0', 'r1', 'r2', 'r3', 'r4'].forEach((id, index) => {
             setTimeout(() => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('visible');
             }, index * 120);
         });
+    }
+
+    // 2. Interaction Glitch (Mobile Touch)
+    document.addEventListener('touchstart', () => {
+        listingEl.classList.add('glitch-active');
+        setTimeout(() => listingEl.classList.remove('glitch-active'), 250);
+    }, {passive: true});
+
+    // 3. Temporal Decay (Corrupting the Header)
+    function startCorrupting() {
+        const symbols = "!@#$%^&*()_+-=█▒░";
+        setInterval(() => {
+            if (Math.random() > 0.8) { // 20% chance every 4 seconds
+                let arr = headerStr.split("");
+                let randIdx = Math.floor(Math.random() * arr.length);
+                arr[randIdx] = symbols[Math.floor(Math.random() * symbols.length)];
+                headerEl.firstChild.textContent = arr.join(""); // Keep the cursor span
+            }
+        }, 4000);
     }
 
     function toggleSnd() {

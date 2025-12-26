@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MITTWOCHRAUM</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #222;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* The Return Link - Forced to the top layer */
+        .nav-wrapper {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999; /* Higher than everything else */
+        }
+
+        .nav-return {
+            text-decoration: none;
+            color: #333; /* Dim but visible gray */
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .nav-return:hover {
+            color: #666;
+            text-decoration: underline;
+        }
+
+        .pixel {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            background: #444;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        h1 {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 12px;
+            letter-spacing: 0.3rem;
+            text-transform: uppercase;
+            font-weight: normal;
+            color: #1a1a1a;
+        }
+
+        .player-container {
+            position: absolute;
+            top: 15%; 
+            left: 10%; 
+            filter: grayscale(100%) brightness(30%);
+            transition: filter 0.5s ease;
+            z-index: 5;
+        }
+
+        .player-container:hover {
+            filter: grayscale(0%) brightness(100%);
+        }
+
+        .text-fragment {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #222;
+            letter-spacing: 1px;
+        }
+
+        /* Scanline Overlay - Moved to lower z-index */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">back_to_root</a>
+    </div>
+
+    <div class="pixel" style="top: 15%; left: 85%;"></div>
+    <div class="pixel" style="top: 75%; left: 10%;"></div>
+    <div class="pixel" style="top: 45%; left: 45%;"></div>
+
+    <h1>Mittwochraum</h1>
+
+    <div class="player-container">
+        <iframe style="border: 0; width: 700px; height: 700px;" src="https://bandcamp.com/EmbeddedPlayer/track=2171250333/size=large/bgcol=333333/linkcol=fe7eaf/minimal=true/transparent=true/" seamless>
+            <a href="https://estebandelamonja.bandcamp.com/track/mittwochraum">Mittwochraum by Esteban De la Monja</a>
+        </iframe>
+    </div>
+
+    <div class="text-fragment">yet everything changes.</div>
+
+</body>
+</html>

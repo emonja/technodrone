@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROOT://</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* Minimalist Sound Toggle */
+        #snd-ctrl {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 9px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            color: #111;
+            transition: color 0.3s;
+        }
+        #snd-ctrl:hover { color: #444; }
+        #snd-ctrl.active { color: #666; text-shadow: 0 0 5px #fff; }
+
+        h1 {
+            font-size: 14px;
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            font-weight: normal;
+            color: #444;
+            opacity: 0; /* Start hidden for animation */
+        }
+
+        .directory-structure {
+            filter: contrast(150%) brightness(70%);
+            transform: rotateX(15deg) rotateY(-10deg);
+            border: 1px solid #111;
+            padding: 40px;
+            min-width: 400px;
+            transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+
+        .directory-structure:hover {
+            filter: contrast(100%) brightness(100%);
+            transform: rotateX(0deg) rotateY(0deg);
+            border-color: #222;
+        }
+
+        .line {
+            font-size: 12px;
+            margin-bottom: 10px;
+            white-space: pre;
+            display: block;
+            opacity: 0;
+        }
+
+        a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #fff;
+            background: #111;
+        }
+
+        .visible { opacity: 1; }
+
+        .glitch-bits {
+            position: absolute;
+            bottom: 10px;
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: #111;
+            animation: flicker 4s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 0.6; }
+            53% { opacity: 0.1; }
+        }
+    </style>
+</head>
+<body>
+
+<audio id="ambient" loop src="sounds/hadshake.mp3"></audio>
+<div id="snd-ctrl" onclick="toggleSnd()">[ AUDIO_OFF ]</div>
+
+<h1 id="title">ROOT://MESH</h1>
+
+<div class="directory-structure">
+    <span class="line" id="l1">> SEARCHING_FILESYSTEM...</span>
+    <span class="line" id="l2">> 1_MATCH_FOUND:</span>
+    <span class="line" id="l3">  └── <a href="bewegungsrausch/code.html">BEWEGUNGSRAUSCH</a></span>
+    <span class="line" id="l4" style="color:#111;">  └── [LOCKED_SECTOR]</span>
+</div>
+
+<div class="glitch-bits">
+    SYS_BOOT_SEQUENCE_COMPLETE // MESH_NODE_01
+</div>
+
+<script>
+    function toggleSnd() {
+        const audio = document.getElementById('ambient');
+        const btn = document.getElementById('snd-ctrl');
+        if (audio.paused) {
+            audio.play();
+            btn.innerHTML = "[ AUDIO_ON ]";
+            btn.classList.add('active');
+        } else {
+            audio.pause();
+            btn.innerHTML = "[ AUDIO_OFF ]";
+            btn.classList.remove('active');
+        }
+    }
+
+    // Simple reveal animation
+    window.onload = () => {
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+        
+        async function boot() {
+            document.getElementById('title').classList.add('visible');
+            await delay(800);
+            document.getElementById('l1').classList.add('visible');
+            await delay(600);
+            document.getElementById('l2').classList.add('visible');
+            await delay(400);
+            document.getElementById('l3').classList.add('visible');
+            await delay(1000);
+            document.getElementById('l4').classList.add('visible');
+        }
+        
+        boot();
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROOT://</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #444;
+            font-family: 'Courier New', monospace;
+            padding: 40px;
+            font-size: 13px;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Scanline effect overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        header {
+            border-bottom: 1px solid #111;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            min-height: 1.6em; /* Prevents layout jump during typing */
+        }
+
+        .dir-listing {
+            max-width: 700px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 120px 80px auto;
+            gap: 20px;
+            margin-bottom: 8px;
+            transition: color 0.2s;
+            opacity: 0; /* Hidden for reveal animation */
+        }
+
+        .row.visible {
+            opacity: 1;
+        }
+
+        .row a {
+            color: #666;
+            text-decoration: none;
+            position: relative;
+        }
+
+        .row:hover {
+            color: #eee;
+        }
+
+        .row:hover a {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        .row:hover a::before {
+            content: ">";
+            position: absolute;
+            left: -15px;
+        }
+
+        .status {
+            color: #222;
+            font-size: 10px;
+        }
+
+        .row:hover .status {
+            color: #444;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 50px;
+            color: #1a1a1a;
+            font-size: 10px;
+        }
+
+        /* FIXED SOUND BUTTON */
+        #snd-ctrl {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            z-index: 101;
+            cursor: pointer;
+            color: #333; /* Dim but visible */
+            font-size: 10px;
+            padding: 5px 10px;
+            border: 1px solid #111;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        #snd-ctrl:hover {
+            color: #666;
+            border-color: #333;
+        }
+
+        #snd-ctrl.active {
+            color: #fff;
+            text-shadow: 0 0 5px #fff;
+            border-color: #444;
+        }
+
+        .blink {
+            animation: blinker 1s step-start infinite;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<audio id="handshake-audio" loop src="sounds/hadshake.mp3"></audio>
+
+<div id="snd-ctrl" onclick="toggleSnd()">[ AUDIO: OFF ]</div>
+
+<header id="header-typewriter"></header>
+
+<div class="dir-listing">
+    <div class="row" id="r0" style="color: #222; margin-bottom: 15px; border-bottom: 1px solid #080808;">
+        <span>TIMESTAMP</span>
+        <span>TYPE</span>
+        <span>IDENTIFIER</span>
+    </div>
+
+    <div class="row" id="r1">
+        <span>2024.12.25</span>
+        <span>[DIR]</span>
+        <a href="bewegungsrausch/code.html">BEWEGUNGSRAUSCH</a>
+    </div>
+
+    <div class="row" id="r2">
+        <span>2025.12.25</span>
+        <span>[DIR]</span>
+        <a href="mittwochraum/code.html">MITTWOCHRAUM</a>
+    </div>
+
+    <div class="row" id="r3" style="opacity: 0.15;">
+        <span>????.??.??</span>
+        <span>[???]</span>
+        <span class="status">ENCRYPTED_SECTOR_LOCKED</span>
+    </div>
+
+    <div class="row" id="r4" style="opacity: 0.05;">
+        <span>0000.00.00</span>
+        <span>[NULL]</span>
+        <span class="status">SIGNAL_LOST</span>
+    </div>
+</div>
+
+<footer>
+    RHIZOME_V.01 // ALL_MEDIA_FRAGMENTS_ACCOUNTED_FOR <br>
+    S_SYS_STATUS: NOMINAL // LOCAL_DRIVE: 0% FREE
+</footer>
+
+<script>
+    const headerText = "Index: /Mesh/Archive_01";
+    const headerEl = document.getElementById('header-typewriter');
+    const audio = document.getElementById('handshake-audio');
+    const sndBtn = document.getElementById('snd-ctrl');
+
+    // 1. Typewriter Animation
+    let charIdx = 0;
+    function type() {
+        if (charIdx < headerText.length) {
+            headerEl.innerHTML += headerText.charAt(charIdx);
+            charIdx++;
+            setTimeout(type, 50);
+        } else {
+            headerEl.innerHTML += ' <span class="blink">_</span>';
+            revealRows();
+        }
+    }
+
+    // 2. Sequential Row Reveal
+    function revealRows() {
+        const rowIds = ['r0', 'r1', 'r2', 'r3', 'r4'];
+        rowIds.forEach((id, index) => {
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('visible');
+            }, index * 150);
+        });
+    }
+
+    // 3. Audio Toggle Logic
+    function toggleSnd() {
+        if (audio.paused) {
+            audio.play();
+            sndBtn.innerHTML = "[ AUDIO: ON ]";
+            sndBtn.classList.add('active');
+        } else {
+            audio.pause();
+            sndBtn.innerHTML = "[ AUDIO: OFF ]";
+            sndBtn.classList.remove('active');
+        }
+    }
+
+    window.onload = type;
+</script>
+
+</body>
+</html>

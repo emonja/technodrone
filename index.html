@@ -7,18 +7,18 @@
     <style>
         :root {
             --bg: #000;
-            --dim-text: #555; 
-            --active-text: #eee;
-            --row-border: #1a1a1a;
+            --dim-text: #444; 
+            --active-text: #bbb;
+            --row-border: #111;
+            --highlight: #fe7eaf; /* Helena's Rebel Pink */
         }
 
         body {
             background-color: var(--bg);
             color: var(--dim-text);
             font-family: 'Courier New', monospace;
-            /* iPhone X Safe Area Padding */
             padding: env(safe-area-inset-top) 25px env(safe-area-inset-bottom) 25px;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.6;
             display: flex;
             flex-direction: column;
@@ -29,13 +29,13 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Scanline Overlay */
-        body::before {
-            content: " ";
+        /* Subtle Scanline */
+        body::after {
+            content: "";
             position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
-            background-size: 100% 3px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px;
             pointer-events: none;
             z-index: 100;
         }
@@ -45,9 +45,9 @@
             padding: 20px 0;
             margin-bottom: 20px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 12px;
-            min-height: 1.6em;
+            letter-spacing: 3px;
+            font-size: 11px;
+            color: #666;
         }
 
         .dir-listing {
@@ -59,75 +59,73 @@
             display: grid;
             grid-template-columns: 100px 60px auto;
             gap: 10px;
-            padding: 15px 0;
-            border-bottom: 1px solid #080808;
+            padding: 14px 0;
+            border-bottom: 1px solid #0a0a0a;
             opacity: 0;
+            transform: translateY(5px);
         }
 
-        .row.visible { opacity: 1; transition: opacity 0.5s ease; }
+        .row.visible { 
+            opacity: 1; 
+            transform: translateY(0);
+            transition: opacity 0.6s ease, transform 0.6s ease; 
+        }
 
         .row a {
             color: var(--active-text);
             text-decoration: none;
             display: block;
+            transition: color 0.3s;
         }
 
-        /* --- GLITCH ANIMATION --- */
-        @keyframes rip {
-            0% { transform: skew(0deg); filter: contrast(100%); }
-            10% { transform: skew(15deg); filter: contrast(300%) brightness(2); clip-path: inset(10% 0 30% 0); }
-            30% { transform: skew(-15deg); clip-path: inset(40% 0 10% 0); }
-            50% { transform: skew(0deg); filter: contrast(100%); clip-path: inset(0 0 0 0); }
-        }
+        /* Hover/Active states */
+        .row a:hover { color: #fff; }
+        #r5 a:hover { color: var(--highlight); text-shadow: 0 0 8px var(--highlight); }
 
+        /* Glitch Trigger */
         .glitch-active {
-            animation: rip 0.25s step-end;
+            filter: invert(1) hue-rotate(90deg);
+            opacity: 0.8;
         }
 
         footer {
             padding: 20px 0;
             color: #222;
-            font-size: 10px;
+            font-size: 9px;
             border-top: 1px solid var(--row-border);
+            letter-spacing: 1px;
         }
 
-        /* Mobile-Ready Audio Toggle */
         #snd-ctrl {
             position: fixed;
             bottom: calc(env(safe-area-inset-bottom) + 20px);
             right: 20px;
             z-index: 101;
             cursor: pointer;
-            color: #444;
-            font-size: 11px;
-            padding: 12px 18px;
-            border: 1px solid #333;
-            background: rgba(0,0,0,0.9);
-            letter-spacing: 1px;
-            border-radius: 2px;
+            color: #333;
+            font-size: 10px;
+            padding: 10px 15px;
+            border: 1px solid #222;
+            background: #000;
+            text-transform: uppercase;
         }
 
-        #snd-ctrl.active {
-            color: #fff;
-            border-color: #666;
-            box-shadow: 0 0 10px rgba(255,255,255,0.1);
-        }
+        #snd-ctrl.active { color: #fe7eaf; border-color: #4a1a2d; }
 
-        .blink { animation: blinker 1s step-start infinite; }
+        .blink { animation: blinker 1.2s step-start infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
 <audio id="handshake-audio" loop src="sounds/hadshake.mp3"></audio>
-
-<div id="snd-ctrl" onclick="toggleSnd()">AUDIO: OFF</div>
+<div id="snd-ctrl" onclick="toggleSnd()">AUDIO_LINK: OFF</div>
 
 <header id="header-text"></header>
 
 <div class="dir-listing" id="listing">
-    <div class="row" id="r0" style="color: #333;">
-        <span>DATE</span><span>TYPE</span><span>ID</span>
+    <div class="row" id="r0" style="color: #222; border-bottom-color: #111;">
+        <span>STAMP</span><span>TYPE</span><span>NODE_ID</span>
     </div>
 
     <div class="row" id="r1">
@@ -150,34 +148,34 @@
         <a href="psychebend/code.html">PSYCHEBEND</a>
     </div>
 
-    <div class="row" id="r5" style="opacity: 0.15;">
-        <span>????.??.??</span><span>[???]</span><span>ENCRYPTED_SECTOR</span>
+    <div class="row" id="r5">
+        <span>28.12.25</span><span>[EXT]</span>
+        <a href="helena/code.html">HELENA 2.0A</a>
     </div>
 </div>
 
 <footer id="footer-bits">
-    RHIZOME_V.02_MOB // SYSTEM_READY <br>
-    S_SYS_STATUS: NOMINAL
+    TERMINAL_V.03 // RHIZOME_CORE_INIT <br>
+    STATUS: ALL_NODES_ONLINE
 </footer>
 
 <script>
-    let headerStr = "ROOT://ARCHIVE_01";
+    const headerStr = "ROOT://ARCHIVE_ACCESS";
     const headerEl = document.getElementById('header-text');
     const listingEl = document.getElementById('listing');
     const audio = document.getElementById('handshake-audio');
     const sndBtn = document.getElementById('snd-ctrl');
 
-    // 1. Initial Typewriter Effect
+    // Typewriter
     let charIdx = 0;
     function type() {
         if (charIdx < headerStr.length) {
             headerEl.innerHTML += headerStr.charAt(charIdx);
             charIdx++;
-            setTimeout(type, 60);
+            setTimeout(type, 50);
         } else {
             headerEl.innerHTML += ' <span class="blink">_</span>';
             revealRows();
-            startCorrupting();
         }
     }
 
@@ -186,44 +184,30 @@
             setTimeout(() => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('visible');
-            }, index * 120);
+            }, index * 100);
         });
     }
 
-    // 2. Interaction Glitch (Touch Interference)
-    document.addEventListener('touchstart', (e) => {
-        // Don't glitch if tapping the link directly to allow immediate navigation
-        if (e.target.tagName !== 'A') {
-            listingEl.classList.add('glitch-active');
-            setTimeout(() => listingEl.classList.remove('glitch-active'), 250);
-        }
-    }, {passive: true});
-
-    // 3. Temporal Decay (Header Corruption)
-    function startCorrupting() {
-        const symbols = "!@#$%^&*()_+-=█▒░";
-        setInterval(() => {
-            if (Math.random() > 0.85) { 
-                let arr = headerStr.split("");
-                let randIdx = Math.floor(Math.random() * arr.length);
-                arr[randIdx] = symbols[Math.floor(Math.random() * symbols.length)];
-                headerEl.firstChild.textContent = arr.join(""); 
-            }
-        }, 5000);
-    }
-
-    // 4. Global Audio Toggle
+    // Handshake Audio Toggle
     function toggleSnd() {
         if (audio.paused) {
-            audio.play();
-            sndBtn.innerHTML = "AUDIO: ON";
+            audio.play().catch(e => console.log("Audio Init Blocked"));
+            sndBtn.innerHTML = "AUDIO_LINK: ACTIVE";
             sndBtn.classList.add('active');
         } else {
             audio.pause();
-            sndBtn.innerHTML = "AUDIO: OFF";
+            sndBtn.innerHTML = "AUDIO_LINK: OFF";
             sndBtn.classList.remove('active');
         }
     }
+
+    // Touch Glitch
+    document.addEventListener('touchstart', (e) => {
+        if (e.target.tagName !== 'A') {
+            listingEl.classList.add('glitch-active');
+            setTimeout(() => listingEl.classList.remove('glitch-active'), 80);
+        }
+    }, {passive: true});
 
     window.onload = type;
 </script>

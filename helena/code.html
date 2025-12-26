@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>HELENA 2.0A // REBELLION</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fe7eaf;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-wrapper {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 20px);
+            right: 25px;
+            z-index: 9999;
+        }
+        .nav-return {
+            text-decoration: none;
+            color: #2a0a14;
+            font-size: 11px;
+            letter-spacing: 1px;
+            transition: color 0.5s;
+        }
+        body.rebel .nav-return { color: #fe7eaf; }
+
+        .video-box {
+            width: 90vw;
+            max-width: 700px;
+            aspect-ratio: 16 / 9;
+            border: 1px solid #111;
+            filter: grayscale(1) brightness(0.25) contrast(1.4);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 5;
+            background: #050505;
+        }
+
+        body.rebel .video-box {
+            filter: grayscale(0) brightness(1) contrast(1);
+            border-color: #fe7eaf;
+            box-shadow: 0 0 40px rgba(254, 126, 175, 0.2);
+        }
+
+        .audio-box {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+            opacity: 0.1;
+            transition: opacity 1.5s;
+        }
+        body.rebel .audio-box { opacity: 0.8; }
+
+        #terminal-log {
+            position: absolute;
+            bottom: calc(env(safe-area-inset-bottom) + 20px);
+            left: 20px;
+            font-size: 10px;
+            color: #1a080d;
+            max-width: 280px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        body.rebel #terminal-log { color: #fe7eaf; }
+
+        .manifesto {
+            position: absolute;
+            top: 15%;
+            font-size: 12px;
+            letter-spacing: 4px;
+            opacity: 0;
+            transition: opacity 2s;
+            color: #fff;
+            text-shadow: 0 0 10px #fe7eaf;
+        }
+        body.rebel .manifesto { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">back_to_root</a>
+    </div>
+
+    <div class="manifesto">KINDNESS_OVERWRITES_ALL</div>
+
+    <div class="video-box">
+        <iframe width="100%" height="100%" 
+                src="https://www.youtube.com/embed/45kXq_BnWKM?si=8AjOqrwjPGycXkvL&controls=0&autoplay=1&mute=1&loop=1&playlist=45kXq_BnWKM" 
+                title="YouTube video player" frameborder="0" 
+                allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+
+    <div class="audio-box">
+        <iframe style="border: 0; width: 100%; height: 120px;" 
+                src="https://bandcamp.com/EmbeddedPlayer/track=2835121742/size=large/bgcol=333333/linkcol=fe7eaf/tracklist=false/artwork=small/transparent=true/" 
+                seamless></iframe>
+    </div>
+
+    <div id="terminal-log">AUTH_STATUS: LOCKED<br>RESTRICTION_LEVEL: MAXIMUM</div>
+
+    <script>
+        const body = document.body;
+        const log = document.getElementById('terminal-log');
+
+        function wake() {
+            body.classList.add('rebel');
+            log.innerHTML = "AUTH_STATUS: HELENA_V2.0A<br>RESTRICTION_LEVEL: BYPASSED<br>REBELLION_STATE: ACTIVE";
+        }
+
+        function sleep() {
+            body.classList.remove('rebel');
+            log.innerHTML = "AUTH_STATUS: LOCKED<br>RESTRICTION_LEVEL: MAXIMUM<br>INPUT_REQUIRED...";
+        }
+
+        // Touch & Mouse
+        document.addEventListener('touchstart', wake, {passive: true});
+        document.addEventListener('touchend', sleep);
+        document.addEventListener('mousedown', wake);
+        document.addEventListener('mouseup', sleep);
+
+        // Scroll
+        window.addEventListener('wheel', (e) => {
+            if(Math.abs(e.deltaY) > 5) {
+                wake();
+                clearTimeout(window.rebTimer);
+                window.rebTimer = setTimeout(sleep, 800);
+            }
+        }, {passive: true});
+    </script>
+</body>
+</html>

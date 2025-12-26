@@ -7,101 +7,86 @@
     <style>
       body {
         background-color: #000;
-        color: #333; 
+        color: #444; 
         font-family: 'Courier New', monospace;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        /* iPhone X Safe Areas */
         padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
         height: 100vh;
         margin: 0;
         overflow: hidden;
-        perspective: 1000px; 
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent; /* Removes the gray box on touch */
       }
 
       .nav-wrapper {
         position: fixed;
-        top: calc(env(safe-area-inset-top) + 10px);
-        right: 20px;
+        top: calc(env(safe-area-inset-top) + 15px);
+        right: 25px;
         z-index: 9999;
       }
 
       .nav-return {
         text-decoration: none;
-        color: #555; /* Slightly brighter for mobile visibility */
-        font-size: 11px;
+        color: #666; 
+        font-size: 12px;
         letter-spacing: 1px;
-        padding: 10px; /* Bigger tap target */
+        padding: 10px;
       }
 
       h1 {
         font-size: 14px;
         letter-spacing: 0.5rem;
         text-transform: uppercase;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         font-weight: normal;
-        color: #444;
+        color: #555;
       }
 
-      /* Image container with reactive "Rip" animation */
       .media-container {
+        width: 100%;
+        max-width: 400px; /* Constrained for mobile portrait */
         filter: grayscale(100%) contrast(150%) brightness(70%);
-        transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
-        max-width: 100%;
-        transform: rotateX(10deg) rotateY(-5deg); 
-        box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+        transition: transform 0.8s cubic-bezier(0.2, 1, 0.3, 1), filter 0.8s;
+        border: 1px solid #111;
       }
 
-      @keyframes rip-effect {
-            0% { transform: skew(0deg) rotateX(10deg) rotateY(-5deg); filter: contrast(100%); }
-            10% { transform: skew(10deg) scale(1.1); filter: contrast(300%) brightness(2); clip-path: inset(10% 0 30% 0); }
-            30% { transform: skew(-10deg); clip-path: inset(40% 0 10% 0); }
-            50% { transform: skew(0deg) rotateX(10deg) rotateY(-5deg); filter: contrast(100%); clip-path: inset(0 0 0 0); }
+      /* Simplified Glitch: Horizontal Shift & Flash */
+      @keyframes glitch-mobile {
+          0% { transform: translate(0,0); filter: brightness(1); }
+          20% { transform: translate(-10px, 5px); filter: brightness(3) invert(1); }
+          40% { transform: translate(15px, -5px); filter: brightness(1); }
+          60% { transform: translate(-5px, 0); filter: contrast(400%); }
+          100% { transform: translate(0,0); filter: brightness(1); }
       }
 
       .glitch-active {
-          animation: rip-effect 0.2s step-end;
+          animation: glitch-mobile 0.2s step-end;
       }
 
       .player-box {
-        margin-top: 30px;
-        opacity: 0.4; /* Baseline higher for mobile visibility */
-        transition: opacity 1s;
-        width: 280px; /* Narrower for mobile */
-        filter: invert(100%) hue-rotate(180deg); 
-      }
-
-      /* On mobile, we use active instead of hover */
-      .media-container:active {
-        filter: grayscale(0%) contrast(100%) brightness(100%);
-        transform: rotateX(0deg) rotateY(0deg) scale(1.02);
+        margin-top: 40px;
+        opacity: 0.4; 
+        width: 300px;
+        filter: invert(100%); 
       }
 
       .glitch-bits {
         position: absolute;
-        bottom: calc(env(safe-area-inset-bottom) + 10px);
-        font-size: 8px;
-        letter-spacing: 1px;
-        color: #1a1a1a; 
-        animation: flicker 4s infinite;
-        text-align: center;
+        bottom: calc(env(safe-area-inset-bottom) + 15px);
+        font-size: 9px;
+        color: #222; 
         width: 100%;
+        text-align: center;
       }
 
-      @keyframes flicker {
-        0%, 100% { opacity: 0.1; }
-        50% { opacity: 0.6; }
-        53% { opacity: 0.1; }
-      }
-
-      body::after {
-        content: "";
+      /* The static scanlines - moved to a separate layer to avoid touch conflicts */
+      .overlay {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.2) 50%);
+        background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.3) 50%);
         background-size: 100% 4px;
         pointer-events: none;
         z-index: 50;
@@ -110,6 +95,8 @@
 </head>
 <body>
 
+    <div class="overlay"></div>
+
     <div class="nav-wrapper">
         <a href="../index.html" class="nav-return">back_to_root</a>
     </div>
@@ -117,7 +104,7 @@
     <h1>Bewegungsrausch</h1>
 
     <div class="media-container" id="visual">
-        <img src="img.png" style="width: 100%; border: 1px solid #111;">
+        <img src="img.png" style="width: 100%; display: block;">
     </div>
 
     <div class="player-box">
@@ -127,20 +114,26 @@
     </div>
 
     <div class="glitch-bits">
-        COORD_52.5200_13.4050 // SYSTEM_MEMORY_LEAK
+        SYSTEM_MEMORY_LEAK // NOD_01
     </div>
 
     <script>
         const visual = document.getElementById('visual');
 
-        // Touch Glitch
-        document.addEventListener('touchstart', (e) => {
-            // Only trigger if touching the image or background, not the player/link
-            if(e.target.tagName !== 'A' && e.target.tagName !== 'IFRAME') {
-                visual.classList.add('glitch-active');
-                setTimeout(() => visual.classList.remove('glitch-active'), 200);
-            }
-        }, {passive: true});
+        // Robust mobile touch handling
+        function triggerGlitch() {
+            visual.classList.add('glitch-active');
+            setTimeout(() => {
+                visual.classList.remove('glitch-active');
+            }, 250);
+        }
+
+        // Listen for touch anywhere on the body
+        document.body.addEventListener('touchstart', (e) => {
+            // Don't glitch if we are clicking the player or the back link
+            if (e.target.closest('.player-box') || e.target.closest('.nav-wrapper')) return;
+            triggerGlitch();
+        }, { passive: true });
     </script>
 
 </body>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Chameleon Wall</title>
+    <style>
+        body {
+            transition: background-color 0.5s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Waiting for signal...</h1>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // PASTE YOUR FIREBASE CONFIG HERE
+        const firebaseConfig = {
+    apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+    authDomain: "technodrone-ce06d.firebaseapp.com",
+    databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+    projectId: "technodrone-ce06d",
+    storageBucket: "technodrone-ce06d.firebasestorage.app",
+    messagingSenderId: "869296657162",
+    appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3",
+    measurementId: "G-HS53JTV490"
+  };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const colorRef = ref(db, 'pageState/color');
+
+        // The Listener: triggers whenever the DB changes
+        onValue(colorRef, (snapshot) => {
+            const color = snapshot.val();
+            if (color) {
+                document.body.style.backgroundColor = color;
+                document.querySelector('h1').innerText = `Current Mood: ${color.toUpperCase()}`;
+            }
+        });
+    </script>
+</body>
+</html>

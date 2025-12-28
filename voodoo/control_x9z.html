@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Control</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #333; color: white; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        button {
+            padding: 20px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <h2>Remote Control</h2>
+    <div class="btn-grid">
+        <button onclick="setColor('#FF5733')" style="background-color: #FF5733;">Red</button>
+        <button onclick="setColor('#33FF57')" style="background-color: #33FF57;">Green</button>
+        <button onclick="setColor('#3357FF')" style="background-color: #3357FF;">Blue</button>
+        <button onclick="setColor('#F333FF')" style="background-color: #F333FF;">Purple</button>
+        <button onclick="setColor('#000000')" style="background-color: #000000;">Black</button>
+        <button onclick="setColor('#FFFFFF')" style="background-color: #FFFFFF; color: black;">White</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // PASTE THE SAME FIREBASE CONFIG HERE
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "YOUR_DB_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "NUMBERS",
+            appId: "NUMBERS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        // Expose function to window so HTML buttons can use it
+        window.setColor = (colorCode) => {
+            set(ref(db, 'pageState/color'), colorCode);
+        };
+    </script>
+</body>
+</html>

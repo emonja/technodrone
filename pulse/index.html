@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tone Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    font-family: monospace;
+    background: #111;
+    color: #eee;
+    padding: 20px;
+}
+label {
+    display: block;
+    margin-top: 10px;
+}
+input, select, button {
+    width: 100%;
+    margin-top: 5px;
+}
+button {
+    margin-top: 15px;
+    padding: 10px;
+}
+</style>
+</head>
+<body>
+
+<h2>Tone Generator</h2>
+
+<label>Frequency (Hz)
+<input type="number" id="freq" value="440">
+</label>
+
+<label>Waveform
+<select id="wave">
+    <option value="sine">Sine</option>
+    <option value="square">Square</option>
+    <option value="sawtooth">Saw</option>
+    <option value="triangle">Triangle</option>
+</select>
+</label>
+
+<label>BPM
+<input type="number" id="bpm" value="120">
+</label>
+
+<label>Attack (s)
+<input type="number" step="0.01" id="attack" value="0.05">
+</label>
+
+<label>Decay (s)
+<input type="number" step="0.01" id="decay" value="0.1">
+</label>
+
+<label>Sustain (0–1)
+<input type="number" step="0.01" id="sustain" value="0.6">
+</label>
+
+<label>Release (s)
+<input type="number" step="0.01" id="release" value="0.2">
+</label>
+
+<button id="start">Start</button>
+<button id="stop">Stop</button>
+
+<script>
+let audioCtx;
+let osc;
+let gainNode;
+
+let nextNoteTime = 0;
+let schedulerTimer = null;
+const scheduleAheadTime = 0.1; // seconds
+const schedulerInterval = 25;  // ms
+
+const freqEl = document.getElementById('freq');
+const waveEl = document.getElementById('wave');
+const bpmEl = document.getElementById('bpm');
+const attackEl = document.getElementById('attack');
+const decayEl = document.getElementById('decay');
+const sustainEl = document.getElementById('sustain');
+const releaseEl = document.getElementById('release');
+
+function secondsPerBeat() {
+    return 60 / parseFloat(bpmEl.value);
+}
+
+function triggerEnvelope(time) {
+    const attack = parseFloat(attackEl.value);
+    const decay = parseFloat(decayEl.value);
+    const sustain = parseFloat(sustainEl.value);
+    const release = parseFloat(releaseEl.value);
+
+    const g = gainNode.gain;
+
+    g.cancelScheduledValues(time);
+    g.setValueAtTime(0, time);
+    g.linearRampToValueAtTime(1, time + attack);
+    g.linearRampToValueAtTime(sustain, time + attack + decay);
+    g.linearRampToValueAtTime(0, time + attack + decay + release);
+}
+
+function scheduler() {
+    while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+        triggerEnvelope(nextNoteTime);
+        nextNoteTime += secondsPerBeat();
+    }
+}
+
+function startScheduler() {
+    nextNoteTime = audioCtx.currentTime;
+    schedulerTimer = setInterval(scheduler, schedulerInterval);
+}
+
+function stopScheduler() {
+    clearInterval(schedulerTimer);
+    schedulerTimer = null;
+}
+
+document.getElementById('start').onclick = () => {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    osc = audioCtx.createOscillator();
+    gainNode = audioCtx.createGain();
+
+    osc.type = waveEl.value;
+    osc.frequency.value = parseFloat(freqEl.value);
+
+    gainNode.gain.value = 0;
+
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    osc.start();
+    startScheduler();
+};
+
+document.getElementById('stop').onclick = () => {
+    stopScheduler();
+    if (osc) osc.stop();
+    if (audioCtx) audioCtx.close();
+};
+
+/* Live parameter updates */
+
+freqEl.oninput = () => {
+    if (osc) osc.frequency.setValueAtTime(parseFloat(freqEl.value), audioCtx.currentTime);
+};
+
+waveEl.onchange = () => {
+    if (osc) osc.type = waveEl.value;
+};
+</script>
+
+
+</body>
+</html>

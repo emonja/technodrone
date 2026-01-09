@@ -2,158 +2,357 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tone Generator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YO SOY</title>
 <style>
+:root {
+  --bg: #111;
+  --fg: #888;
+  --accent: #ff0098;
+}
+
 body {
-    font-family: monospace;
-    background: #111;
-    color: #eee;
-    padding: 20px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: monospace, system-ui, sans-serif;
 }
-label {
-    display: block;
-    margin-top: 10px;
+
+.container {
+  max-width: 440px;
+  margin: auto;
+  padding: 16px;
 }
-input, select, button {
-    width: 100%;
-    margin-top: 5px;
+
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--accent);
 }
+
 button {
-    margin-top: 15px;
-    padding: 10px;
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+canvas {
+  width: 100%;
+  height: 100px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.control {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.control label {
+  width: 24px;
+  font-weight: bold;
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #333;
+  outline: none;
+  position: relative;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+  margin-top: -5px;
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+input[type=range]::-ms-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.value {
+  width: 50px;
+  text-align: right;
+  color: var(--accent);
+  font-weight: bold;
+  margin-left: 6px;
+}
+
+.wave-btns {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.wave-btn {
+  flex: 1;
+  margin: 0 4px;
+  padding: 10px 0;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.wave-btn.active {
+  background: var(--accent);
+  color: #000;
 }
 </style>
 </head>
 <body>
+<div class="container">
 
-<h2>Tone Generator</h2>
+<h1>
+  YO SOY
+  <button id="toggle">START</button>
+</h1>
 
-<label>Frequency (Hz)
-<input type="number" id="freq" value="440">
-</label>
+<canvas id="scope"></canvas>
+<canvas id="envScope"></canvas>
 
-<label>Waveform
-<select id="wave">
-    <option value="sine">Sine</option>
-    <option value="square">Square</option>
-    <option value="sawtooth">Saw</option>
-    <option value="triangle">Triangle</option>
-</select>
-</label>
+<div class="control">
+  <label>Hz</label>
+  <input type="range" id="freq" min="50" max="2000" value="440">
+  <div class="value" id="freqVal">440</div>
+</div>
 
-<label>BPM
-<input type="number" id="bpm" value="120">
-</label>
+<div class="control">
+  <label>BPM</label>
+  <input type="range" id="bpm" min="1" max="240" value="120">
+  <div class="value" id="bpmVal">120</div>
+</div>
 
-<label>Attack (s)
-<input type="number" step="0.01" id="attack" value="0.05">
-</label>
+<div class="control">
+  <label>W</label>
+  <div class="wave-btns">
+    <div class="wave-btn active" data-wave="sine">S</div>
+    <div class="wave-btn" data-wave="triangle">T</div>
+    <div class="wave-btn" data-wave="square">Q</div>
+    <div class="wave-btn" data-wave="sawtooth">∧</div>
+  </div>
+</div>
 
-<label>Decay (s)
-<input type="number" step="0.01" id="decay" value="0.1">
-</label>
+<div class="control">
+  <label>A</label>
+  <input type="range" id="attack" min="0" max="1" step="0.01" value="0.05">
+</div>
 
-<label>Sustain (0–1)
-<input type="number" step="0.01" id="sustain" value="0.6">
-</label>
+<div class="control">
+  <label>D</label>
+  <input type="range" id="decay" min="0" max="1" step="0.01" value="0.1">
+</div>
 
-<label>Release (s)
-<input type="number" step="0.01" id="release" value="0.2">
-</label>
+<div class="control">
+  <label>S</label>
+  <input type="range" id="sustain" min="0" max="1" step="0.01" value="0.6">
+</div>
 
-<button id="start">Start</button>
-<button id="stop">Stop</button>
+<div class="control">
+  <label>R</label>
+  <input type="range" id="release" min="0" max="1" step="0.01" value="0.2">
+</div>
 
 <script>
-let audioCtx;
-let osc;
-let gainNode;
+/* ---------- AUDIO ---------- */
+const MIN_TIME=0.005, MAX_GAIN=0.9;
+let audioCtx, osc, gainNode, analyser;
+let running=false, nextNoteTime=0, scheduleAhead=0.1;
 
-let nextNoteTime = 0;
-let schedulerTimer = null;
-const scheduleAheadTime = 0.1; // seconds
-const schedulerInterval = 25;  // ms
+/* ---------- UI ---------- */
+const freq=document.getElementById('freq');
+const bpm=document.getElementById('bpm');
+const freqVal=document.getElementById('freqVal');
+const bpmVal=document.getElementById('bpmVal');
+const toggleBtn=document.getElementById('toggle');
+const attack=document.getElementById('attack');
+const decay=document.getElementById('decay');
+const sustain=document.getElementById('sustain');
+const release=document.getElementById('release');
+const waveBtns=document.querySelectorAll('.wave-btn');
 
-const freqEl = document.getElementById('freq');
-const waveEl = document.getElementById('wave');
-const bpmEl = document.getElementById('bpm');
-const attackEl = document.getElementById('attack');
-const decayEl = document.getElementById('decay');
-const sustainEl = document.getElementById('sustain');
-const releaseEl = document.getElementById('release');
+freqVal.textContent=freq.value;
+bpmVal.textContent=bpm.value;
 
-function secondsPerBeat() {
-    return 60 / parseFloat(bpmEl.value);
+freq.oninput=()=>{freqVal.textContent=freq.value; osc && osc.frequency.setValueAtTime(+freq.value,audioCtx.currentTime);}
+bpm.oninput=()=>bpmVal.textContent=bpm.value;
+
+/* Wave buttons */
+waveBtns.forEach(btn=>{
+  btn.onclick=()=>{
+    waveBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    osc && (osc.type=btn.dataset.wave);
+  };
+});
+
+/* ---------- TIMING ---------- */
+function secondsPerBeat(){return 60/bpm.value;}
+
+/* ---------- ENVELOPE ---------- */
+function triggerEnvelope(time){
+  const g=gainNode.gain;
+  const a=Math.max(+attack.value,MIN_TIME);
+  const d=Math.max(+decay.value,MIN_TIME);
+  const r=Math.max(+release.value,MIN_TIME);
+  const peak=MAX_GAIN;
+  const s=Math.min(+sustain.value*peak,peak);
+  g.cancelScheduledValues(time);
+  g.setValueAtTime(0,time);
+  g.linearRampToValueAtTime(peak,time+a);
+  g.linearRampToValueAtTime(s,time+a+d);
+  g.linearRampToValueAtTime(0,time+a+d+r);
 }
 
-function triggerEnvelope(time) {
-    const attack = parseFloat(attackEl.value);
-    const decay = parseFloat(decayEl.value);
-    const sustain = parseFloat(sustainEl.value);
-    const release = parseFloat(releaseEl.value);
-
-    const g = gainNode.gain;
-
-    g.cancelScheduledValues(time);
-    g.setValueAtTime(0, time);
-    g.linearRampToValueAtTime(1, time + attack);
-    g.linearRampToValueAtTime(sustain, time + attack + decay);
-    g.linearRampToValueAtTime(0, time + attack + decay + release);
+/* ---------- SCHEDULER ---------- */
+function scheduler(){
+  if(!running) return;
+  while(nextNoteTime<audioCtx.currentTime+scheduleAhead){
+    triggerEnvelope(nextNoteTime);
+    cursorStart(nextNoteTime);
+    nextNoteTime+=secondsPerBeat();
+  }
+  requestAnimationFrame(scheduler);
 }
 
-function scheduler() {
-    while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
-        triggerEnvelope(nextNoteTime);
-        nextNoteTime += secondsPerBeat();
+/* ---------- START/STOP ---------- */
+toggleBtn.onclick=async()=>{
+  if(!running){
+    if(!audioCtx){
+      audioCtx=new AudioContext();
+      osc=audioCtx.createOscillator();
+      gainNode=audioCtx.createGain();
+      analyser=audioCtx.createAnalyser();
+      osc.type='sine';
+      osc.frequency.value=+freq.value;
+      gainNode.gain.value=0;
+      osc.connect(gainNode);
+      gainNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      osc.start();
     }
+    if(audioCtx.state==='suspended') await audioCtx.resume();
+    running=true;
+    nextNoteTime=audioCtx.currentTime;
+    scheduler();
+    drawScope();
+    drawEnv();
+    drawCursor();
+    toggleBtn.textContent="STOP";
+  }else{
+    running=false;
+    gainNode && gainNode.gain.setValueAtTime(0,audioCtx.currentTime);
+    toggleBtn.textContent="START";
+  }
 }
 
-function startScheduler() {
-    nextNoteTime = audioCtx.currentTime;
-    schedulerTimer = setInterval(scheduler, schedulerInterval);
+/* ---------- CANVASES ---------- */
+const scopeCanvas=document.getElementById('scope');
+const scopeCtx=scopeCanvas.getContext('2d');
+const envCanvas=document.getElementById('envScope');
+const envCtx=envCanvas.getContext('2d');
+let cursorTime=0;
+
+/* Scope */
+function drawScope(){
+  if(!running) return;
+  const w=scopeCanvas.width, h=scopeCanvas.height;
+  const buffer=new Uint8Array(analyser.fftSize);
+  analyser.getByteTimeDomainData(buffer);
+  scopeCtx.clearRect(0,0,w,h);
+  scopeCtx.strokeStyle='#ff0098';
+  scopeCtx.beginPath();
+  buffer.forEach((v,i)=>{const x=(i/buffer.length)*w; const y=(v/255)*h; i===0?scopeCtx.moveTo(x,y):scopeCtx.lineTo(x,y);});
+  scopeCtx.stroke();
+  requestAnimationFrame(drawScope);
 }
 
-function stopScheduler() {
-    clearInterval(schedulerTimer);
-    schedulerTimer = null;
+/* Envelope static */
+function drawEnv(){
+  if(!running) return;
+  const w=envCanvas.width, h=envCanvas.height;
+  envCtx.clearRect(0,0,w,h);
+  const a=Math.max(+attack.value,MIN_TIME);
+  const d=Math.max(+decay.value,MIN_TIME);
+  const s=Math.min(+sustain.value,1);
+  const r=Math.max(+release.value,MIN_TIME);
+  const total=a+d+r+0.001;
+  const points=[
+    {t:0,v:0},{t:a,v:1},{t:a+d,v:s},{t:total,v:0}
+  ];
+  envCtx.strokeStyle='#ff0098';
+  envCtx.lineWidth=2;
+  envCtx.beginPath();
+  points.forEach((p,i)=>{const x=(p.t/total)*w; const y=h-p.v*h; i===0?envCtx.moveTo(x,y):envCtx.lineTo(x,y);});
+  envCtx.stroke();
+  requestAnimationFrame(drawEnv);
 }
 
-document.getElementById('start').onclick = () => {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+/* Cursor as hexagon */
+function cursorStart(time){cursorTime=time;}
+function drawCursor(){
+  if(!running) return;
+  const w=envCanvas.width, h=envCanvas.height;
+  const a=Math.max(+attack.value,MIN_TIME);
+  const d=Math.max(+decay.value,MIN_TIME);
+  const s=Math.min(+sustain.value,1);
+  const r=Math.max(+release.value,MIN_TIME);
+  const total=a+d+r+0.001;
+  const t=Math.min(audioCtx.currentTime-cursorTime,total);
+  let v=0;
+  if(t<=a) v=(t/a)*1;
+  else if(t<=a+d) v=1-((t-a)/d)*(1-s);
+  else v=s-((t-a-d)/r)*s;
+  const x=(t/total)*w;
+  const y=h-v*h;
 
-    osc = audioCtx.createOscillator();
-    gainNode = audioCtx.createGain();
+  // Draw hexagon
+  const size=8;
+  envCtx.fillStyle='#ff0098';
+  envCtx.beginPath();
+  for(let i=0;i<6;i++){
+    const angle=Math.PI/3*i;
+    envCtx.lineTo(x+size*Math.cos(angle),y+size*Math.sin(angle));
+  }
+  envCtx.closePath();
+  envCtx.fill();
 
-    osc.type = waveEl.value;
-    osc.frequency.value = parseFloat(freqEl.value);
-
-    gainNode.gain.value = 0;
-
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    osc.start();
-    startScheduler();
-};
-
-document.getElementById('stop').onclick = () => {
-    stopScheduler();
-    if (osc) osc.stop();
-    if (audioCtx) audioCtx.close();
-};
-
-/* Live parameter updates */
-
-freqEl.oninput = () => {
-    if (osc) osc.frequency.setValueAtTime(parseFloat(freqEl.value), audioCtx.currentTime);
-};
-
-waveEl.onchange = () => {
-    if (osc) osc.type = waveEl.value;
-};
+  requestAnimationFrame(drawCursor);
+}
 </script>
-
-
 </body>
 </html>

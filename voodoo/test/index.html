@@ -10,71 +10,84 @@
         #overlay {
             position: absolute; bottom: 20px; left: 20px;
             color: rgba(255,255,255,0.5); font-family: monospace;
-            pointer-events: none;
+            pointer-events: none; user-select: none;
         }
     </style>
 </head>
 <body>
-    <div id="overlay">Waiting for signal...</div>
+    <div id="overlay">Initializing System...</div>
     <canvas id="artCanvas"></canvas>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // PASTE YOUR FIREBASE CONFIG HERE
+        // --- YOUR CONFIG IS PRE-FILLED HERE ---
         const firebaseConfig = {
-    apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
-    authDomain: "technodrone-ce06d.firebaseapp.com",
-    databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
-    projectId: "technodrone-ce06d",
-    storageBucket: "technodrone-ce06d.firebasestorage.app",
-    messagingSenderId: "869296657162",
-    appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3",
-    measurementId: "G-HS53JTV490"
-  };
+            apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+            authDomain: "technodrone-ce06d.firebaseapp.com",
+            databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+            projectId: "technodrone-ce06d",
+            storageBucket: "technodrone-ce06d.firebasestorage.app",
+            messagingSenderId: "869296657162",
+            appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3",
+            measurementId: "G-HS53JTV490"
+        };
         // ---------------------------------------
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        // Default Physics State
+        // 1. Define Robust Defaults (Auto-Pilot)
         let artState = {
             speed: 1,
-            color: '#00ffcc',
-            connectDistance: 100
+            color: '#00ffcc', // Default Neon Blue
+            connectDistance: 150
         };
 
-        // Listen for changes
+        // 2. Listen for changes
+        const statusLabel = document.getElementById('overlay');
+        
         onValue(ref(db, 'artState'), (snapshot) => {
             const val = snapshot.val();
+            
             if (val) {
+                // If signal exists, use it
                 artState = val;
-                document.getElementById('overlay').innerText = `Speed: ${val.speed} | Vibe: ${val.color}`;
+                statusLabel.innerText = `Connected | Speed: ${val.speed}`;
+                statusLabel.style.opacity = "0.5"; 
+            } else {
+                // If silence (Cold Start), keep defaults but update text
+                statusLabel.innerText = "Auto-Pilot Mode (Touch Remote to Override)";
             }
         });
 
         // --- VISUALIZATION ENGINE ---
         const canvas = document.getElementById('artCanvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
 
         let particles = [];
-        const particleCount = 60; // Number of floating dots
+        const particleCount = 80; 
 
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5);
-                this.vy = (Math.random() - 0.5);
-                this.size = Math.random() * 3 + 1;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.size = Math.random() * 2 + 1;
             }
             update() {
-                // Move based on Firebase Speed
-                this.x += this.vx * artState.speed;
-                this.y += this.vy * artState.speed;
+                const currentSpeed = Number(artState.speed) || 1;
+                this.x += this.vx * currentSpeed;
+                this.y += this.vy * currentSpeed;
 
                 // Bounce off edges
                 if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
@@ -88,13 +101,13 @@
             }
         }
 
-        // Initialize
+        // Initialize Particles
         for(let i=0; i<particleCount; i++) particles.push(new Particle());
 
         // Animation Loop
         function animate() {
-            // Create "trails" effect by using semi-transparent clear
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+            // Create "trails" effect
+            ctx.fillStyle = 'rgba(17, 17, 17, 0.2)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             particles.forEach((p, index) => {
@@ -106,11 +119,12 @@
                     const dx = particles[j].x - p.x;
                     const dy = particles[j].y - p.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
+                    const limit = Number(artState.connectDistance) || 100;
 
-                    if (dist < artState.connectDistance) {
+                    if (dist < limit) {
                         ctx.beginPath();
                         ctx.strokeStyle = artState.color;
-                        ctx.globalAlpha = 1 - (dist / artState.connectDistance); // Fade out based on distance
+                        ctx.globalAlpha = 1 - (dist / limit); 
                         ctx.lineWidth = 1;
                         ctx.moveTo(p.x, p.y);
                         ctx.lineTo(particles[j].x, particles[j].y);
@@ -122,12 +136,6 @@
             requestAnimationFrame(animate);
         }
         animate();
-
-        // Handle Resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
     </script>
 </body>
 </html>

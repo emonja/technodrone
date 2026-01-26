@@ -6,32 +6,21 @@
     <title>ZERREISSUNG</title>
     <style>
         body {
-            background-color: #f0f0f0; /* Clinical light grey/white base */
-            color: #000;
-            font-family: 'Courier New', monospace;
+            background-color: #000; /* Deep black void behind the halves */
             margin: 0;
             height: 100vh;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            -webkit-tap-highlight-color: transparent;
             touch-action: none;
-            transition: background-color 0.3s;
+            font-family: 'Courier New', monospace;
         }
-
-        .nav-wrapper {
-            position: fixed;
-            top: calc(env(safe-area-inset-top) + 20px);
-            right: 25px;
-            z-index: 1000;
-        }
-        .nav-return { text-decoration: none; color: #999; font-size: 11px; letter-spacing: 2px; }
 
         .tear-zone {
             position: relative;
-            width: 90vw;
-            height: 70vh;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             perspective: 1200px;
             z-index: 5;
@@ -42,9 +31,9 @@
             height: 100%;
             overflow: hidden;
             position: relative;
-            /* The Rending movement */
             transition: transform 0.05s linear;
-            border: 1px solid #ddd;
+            background-color: #f0f0f0; /* Default clinical grey */
+            will-change: transform, background-color;
         }
 
         .half img {
@@ -53,17 +42,31 @@
             position: absolute;
             object-fit: cover;
             filter: contrast(1.2) saturate(1.1);
+            pointer-events: none;
         }
 
         #left-half img { left: 0; }
         #right-half img { right: 0; }
 
+        /* Syncopated Strobe Animations */
+        @keyframes strobeL {
+            0% { background-color: #f0f0f0; }
+            50% { background-color: #ffffff; }
+            100% { background-color: #b0b0b0; }
+        }
+        @keyframes strobeR {
+            0% { background-color: #ffffff; }
+            50% { background-color: #a0a0a0; }
+            100% { background-color: #f0f0f0; }
+        }
+
+        .active-l { animation: strobeL infinite; }
+        .active-r { animation: strobeR infinite; }
+
         #tension-line {
-            position: absolute;
-            left: 50%;
-            top: -10%;
-            width: 1px;
-            height: 120%;
+            position: fixed;
+            left: 50%; top: 0;
+            width: 1px; height: 100%;
             background: #ff3399;
             box-shadow: 0 0 20px rgba(255, 51, 153, 0.8);
             z-index: 100;
@@ -77,35 +80,29 @@
             width: 85vw;
             max-width: 400px;
             z-index: 200;
+            background: rgba(255,255,255,0.9);
             border: 1px solid #eee;
-            background: #fff;
         }
 
         .definition {
             position: absolute;
             font-size: 9px;
-            color: #bbb;
+            color: #666;
             letter-spacing: 3px;
-            pointer-events: none;
             text-transform: uppercase;
+            pointer-events: none;
+            z-index: 10;
         }
-
-        /* State when the "Ripping" happens */
-        body.stress { background-color: #fff; }
     </style>
 </head>
-<body id="main">
+<body>
 
-    <div class="nav-wrapper">
-        <a href="../index.html" class="nav-return">back_to_root</a>
-    </div>
+    <div id="tension-line"></div>
 
     <div class="definition" style="top: 15%; left: 10%;">STILLNESS_TORN</div>
     <div class="definition" style="bottom: 15%; right: 10%;">NEVER_YIELDING</div>
 
-    <div id="tension-line"></div>
-
-    <div class="tear-zone" id="stage">
+    <div class="tear-zone">
         <div class="half" id="left-half">
             <img src="zerreiVectors.jpg">
         </div>
@@ -115,58 +112,52 @@
     </div>
 
     <div class="player-container">
-        <iframe style="border: 0; width: 100%; height: 42px;" src="https://bandcamp.com/EmbeddedPlayer/track=4200879574/size=small/bgcol=ffffff/linkcol=63b2cc/artwork=none/transparent=true/" seamless>
-            <a href="https://estebandelamonja.bandcamp.com/track/zerrei-ung-drone">Zerreißung_Drone by Esteban De la Monja</a>
-        </iframe>
+        <iframe style="border: 0; width: 100%; height: 42px;" src="https://bandcamp.com/EmbeddedPlayer/track=4200879574/size=small/bgcol=ffffff/linkcol=63b2cc/artwork=none/transparent=true/" seamless></iframe>
     </div>
 
     <script>
         const left = document.getElementById('left-half');
         const right = document.getElementById('right-half');
         const line = document.getElementById('tension-line');
-        const body = document.getElementById('main');
 
         function applyTear(x) {
             const mid = window.innerWidth / 2;
-            const dist = (x - mid);
-            const force = dist / mid; // range -1 to 1
+            const force = (x - mid) / mid;
+            const absForce = Math.abs(force);
 
-            const horizontalGap = Math.abs(force) * 60;
-            const verticalShear = force * 80;
-            const rotation = force * 15;
+            const horizontalGap = absForce * 80;
+            const verticalShear = force * 120;
+            const rotation = force * 10;
 
             left.style.transform = `translateX(${-horizontalGap}px) translateY(${verticalShear}px) rotateY(${rotation}deg)`;
             right.style.transform = `translateX(${horizontalGap}px) translateY(${-verticalShear}px) rotateY(${-rotation}deg)`;
             
-            // Visual feedback of stress
-            if (Math.abs(force) > 0.1) {
-                body.classList.add('stress');
-                line.style.width = (1 + Math.abs(force) * 4) + "px";
+            if (absForce > 0.02) {
+                left.classList.add('active-l');
+                right.classList.add('active-r');
+                
+                // Breathing Logic: Slower as you get closer to center
+                const speed = Math.max(0.05, 0.6 - (absForce * 0.55)); 
+                left.style.animationDuration = `${speed}s`;
+                right.style.animationDuration = `${speed * 1.4}s`; // Offset for syncopation
+                
+                line.style.width = (1 + absForce * 30) + "px";
+                line.style.backgroundColor = absForce > 0.7 ? "#fff" : "#ff3399";
             } else {
-                body.classList.remove('stress');
-                line.style.width = "1px";
+                reset();
             }
         }
 
-        // Touch logic for iPhone X
-        document.addEventListener('touchstart', (e) => {
-            applyTear(e.touches[0].clientX);
-        }, {passive: true});
+        function reset() {
+            left.style.transform = right.style.transform = 'none';
+            left.classList.remove('active-l');
+            right.classList.remove('active-r');
+            line.style.width = "1px";
+        }
 
-        document.addEventListener('touchmove', (e) => {
-            applyTear(e.touches[0].clientX);
-        }, {passive: true});
-
-        document.addEventListener('touchend', () => {
-            left.style.transform = `translate(0,0) rotateY(0deg)`;
-            right.style.transform = `translate(0,0) rotateY(0deg)`;
-            body.classList.remove('stress');
-        });
-
-        // Mouse logic
-        document.addEventListener('mousemove', (e) => {
-            applyTear(e.clientX);
-        });
+        document.addEventListener('touchmove', (e) => applyTear(e.touches[0].clientX), {passive: true});
+        document.addEventListener('mousemove', (e) => applyTear(e.clientX));
+        document.addEventListener('touchend', reset);
     </script>
 </body>
 </html>

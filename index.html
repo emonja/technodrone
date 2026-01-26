@@ -10,7 +10,8 @@
             --dim-text: #444; 
             --active-text: #bbb;
             --row-border: #111;
-            --highlight: #fe7eaf; /* Helena's Rebel Pink */
+            --rebel-pink: #fe7eaf;
+            --tear-pink: #ff3399;
         }
 
         body {
@@ -29,7 +30,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Subtle Scanline */
+        /* Scanline Overlay */
         body::after {
             content: "";
             position: fixed;
@@ -52,7 +53,6 @@
 
         .dir-listing {
             flex-grow: 1;
-            transition: transform 0.1s ease-out;
         }
 
         .row {
@@ -75,17 +75,18 @@
             color: var(--active-text);
             text-decoration: none;
             display: block;
-            transition: color 0.3s;
+            transition: color 0.3s, text-shadow 0.3s;
         }
 
-        /* Hover/Active states */
+        /* Node-Specific Hover Highlights */
         .row a:hover { color: #fff; }
-        #r5 a:hover { color: var(--highlight); text-shadow: 0 0 8px var(--highlight); }
+        #r5 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
+        #r6 a:hover { color: var(--tear-pink); text-shadow: 0 0 8px var(--tear-pink); }
 
-        /* Glitch Trigger */
+        /* Global Interaction Glitch */
         .glitch-active {
-            filter: invert(1) hue-rotate(90deg);
-            opacity: 0.8;
+            filter: invert(1) contrast(200%);
+            opacity: 0.5;
         }
 
         footer {
@@ -107,10 +108,9 @@
             padding: 10px 15px;
             border: 1px solid #222;
             background: #000;
-            text-transform: uppercase;
         }
 
-        #snd-ctrl.active { color: #fe7eaf; border-color: #4a1a2d; }
+        #snd-ctrl.active { color: #fff; border-color: #444; }
 
         .blink { animation: blinker 1.2s step-start infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
@@ -124,7 +124,7 @@
 <header id="header-text"></header>
 
 <div class="dir-listing" id="listing">
-    <div class="row" id="r0" style="color: #222; border-bottom-color: #111;">
+    <div class="row" id="r0" style="color: #222;">
         <span>STAMP</span><span>TYPE</span><span>NODE_ID</span>
     </div>
 
@@ -152,11 +152,16 @@
         <span>28.12.25</span><span>[EXT]</span>
         <a href="helena/code.html">HELENA 2.0A</a>
     </div>
+
+    <div class="row" id="r6">
+        <span>25.01.26</span><span>[DRN]</span>
+        <a href="zerreissung/code.html">ZERREISSUNG</a>
+    </div>
 </div>
 
 <footer id="footer-bits">
-    TERMINAL_V.03 // RHIZOME_CORE_INIT <br>
-    STATUS: ALL_NODES_ONLINE
+    TERMINAL_V.04 // RHIZOME_CORE_INIT <br>
+    STATUS: SYSTEM_WIDE_STABILITY_REACHED
 </footer>
 
 <script>
@@ -180,7 +185,7 @@
     }
 
     function revealRows() {
-        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5'].forEach((id, index) => {
+        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'].forEach((id, index) => {
             setTimeout(() => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('visible');
@@ -188,10 +193,9 @@
         });
     }
 
-    // Handshake Audio Toggle
     function toggleSnd() {
         if (audio.paused) {
-            audio.play().catch(e => console.log("Audio Init Blocked"));
+            audio.play().catch(e => console.log("Audio Blocked"));
             sndBtn.innerHTML = "AUDIO_LINK: ACTIVE";
             sndBtn.classList.add('active');
         } else {

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ZERREISSUNG</title>
+    <style>
+        body {
+            background-color: #f0f0f0; /* Clinical light grey/white base */
+            color: #000;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            transition: background-color 0.3s;
+        }
+
+        .nav-wrapper {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 20px);
+            right: 25px;
+            z-index: 1000;
+        }
+        .nav-return { text-decoration: none; color: #999; font-size: 11px; letter-spacing: 2px; }
+
+        .tear-zone {
+            position: relative;
+            width: 90vw;
+            height: 70vh;
+            display: flex;
+            perspective: 1200px;
+            z-index: 5;
+        }
+
+        .half {
+            width: 50%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            /* The Rending movement */
+            transition: transform 0.05s linear;
+            border: 1px solid #ddd;
+        }
+
+        .half img {
+            height: 100%;
+            width: 200%; 
+            position: absolute;
+            object-fit: cover;
+            filter: contrast(1.2) saturate(1.1);
+        }
+
+        #left-half img { left: 0; }
+        #right-half img { right: 0; }
+
+        #tension-line {
+            position: absolute;
+            left: 50%;
+            top: -10%;
+            width: 1px;
+            height: 120%;
+            background: #ff3399;
+            box-shadow: 0 0 20px rgba(255, 51, 153, 0.8);
+            z-index: 100;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .player-container {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom) + 30px);
+            width: 85vw;
+            max-width: 400px;
+            z-index: 200;
+            border: 1px solid #eee;
+            background: #fff;
+        }
+
+        .definition {
+            position: absolute;
+            font-size: 9px;
+            color: #bbb;
+            letter-spacing: 3px;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+
+        /* State when the "Ripping" happens */
+        body.stress { background-color: #fff; }
+    </style>
+</head>
+<body id="main">
+
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">back_to_root</a>
+    </div>
+
+    <div class="definition" style="top: 15%; left: 10%;">STILLNESS_TORN</div>
+    <div class="definition" style="bottom: 15%; right: 10%;">NEVER_YIELDING</div>
+
+    <div id="tension-line"></div>
+
+    <div class="tear-zone" id="stage">
+        <div class="half" id="left-half">
+            <img src="zerreiVectors.jpg">
+        </div>
+        <div class="half" id="right-half">
+            <img src="zerreiVectors.jpg">
+        </div>
+    </div>
+
+    <div class="player-container">
+        <iframe style="border: 0; width: 100%; height: 42px;" src="https://bandcamp.com/EmbeddedPlayer/track=4200879574/size=small/bgcol=ffffff/linkcol=63b2cc/artwork=none/transparent=true/" seamless>
+            <a href="https://estebandelamonja.bandcamp.com/track/zerrei-ung-drone">Zerreißung_Drone by Esteban De la Monja</a>
+        </iframe>
+    </div>
+
+    <script>
+        const left = document.getElementById('left-half');
+        const right = document.getElementById('right-half');
+        const line = document.getElementById('tension-line');
+        const body = document.getElementById('main');
+
+        function applyTear(x) {
+            const mid = window.innerWidth / 2;
+            const dist = (x - mid);
+            const force = dist / mid; // range -1 to 1
+
+            const horizontalGap = Math.abs(force) * 60;
+            const verticalShear = force * 80;
+            const rotation = force * 15;
+
+            left.style.transform = `translateX(${-horizontalGap}px) translateY(${verticalShear}px) rotateY(${rotation}deg)`;
+            right.style.transform = `translateX(${horizontalGap}px) translateY(${-verticalShear}px) rotateY(${-rotation}deg)`;
+            
+            // Visual feedback of stress
+            if (Math.abs(force) > 0.1) {
+                body.classList.add('stress');
+                line.style.width = (1 + Math.abs(force) * 4) + "px";
+            } else {
+                body.classList.remove('stress');
+                line.style.width = "1px";
+            }
+        }
+
+        // Touch logic for iPhone X
+        document.addEventListener('touchstart', (e) => {
+            applyTear(e.touches[0].clientX);
+        }, {passive: true});
+
+        document.addEventListener('touchmove', (e) => {
+            applyTear(e.touches[0].clientX);
+        }, {passive: true});
+
+        document.addEventListener('touchend', () => {
+            left.style.transform = `translate(0,0) rotateY(0deg)`;
+            right.style.transform = `translate(0,0) rotateY(0deg)`;
+            body.classList.remove('stress');
+        });
+
+        // Mouse logic
+        document.addEventListener('mousemove', (e) => {
+            applyTear(e.clientX);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera Token System</title>
+</head>
+<body>
+
+<button id="start">start camera</button>
+<br><br>
+
+<canvas id="canvas"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+
+<script>
+  const startBtn = document.getElementById("start");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const video = document.createElement("video");
+  video.setAttribute("playsinline", "");
+  video.autoplay = true;
+
+  let stream = null;
+  let stage = "NONE";
+
+  startBtn.onclick = async () => {
+    if (stream) return;
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+
+    video.srcObject = stream;
+
+    video.onloadedmetadata = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      requestAnimationFrame(draw);
+    };
+  };
+
+  function draw() {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // --- QR DETECTION (persistent) ---
+    const qr = jsQR(imageData.data, canvas.width, canvas.height);
+    if (qr && qr.data === "Stage001") {
+      stage = "Stage001";
+    }
+
+    // --- STAR TOKEN (conditional) ---
+    const starPresent = detectGreenStar(imageData);
+
+    if (starPresent) {
+      applyBlackWhite(imageData);
+      ctx.putImageData(imageData, 0, 0);
+    } else if (stage === "Stage001") {
+      applyBlue(imageData);
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // ----------------------------
+  // IMAGE TRANSFORMS
+  // ----------------------------
+
+  function applyBlue(imageData) {
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (d[i] + d[i+1] + d[i+2]) / 3;
+      d[i]   = 0;
+      d[i+1] = 0;
+      d[i+2] = v;
+    }
+  }
+
+  function applyBlackWhite(imageData) {
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (d[i] + d[i+1] + d[i+2]) / 3;
+      const bw = v > 128 ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = bw;
+    }
+  }
+
+  // ----------------------------
+  // GREEN STAR DETECTION
+  // ----------------------------
+
+  function detectGreenStar(imageData) {
+    const d = imageData.data;
+
+    let greenCount = 0;
+    let blackCount = 0;
+
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i];
+      const g = d[i + 1];
+      const b = d[i + 2];
+
+      // bright green background
+      if (g > 180 && r < 100 && b < 100) {
+        greenCount++;
+      }
+
+      // black star
+      if (r < 40 && g < 40 && b < 40) {
+        blackCount++;
+      }
+    }
+
+    const total = d.length / 4;
+    const greenRatio = greenCount / total;
+    const blackRatio = blackCount / total;
+
+    // Uncomment if you want live tuning
+    // console.log(greenRatio.toFixed(3), blackRatio.toFixed(3));
+
+    return (
+      greenRatio > 0.08 &&   // enough green field
+      blackRatio > 0.03      // enough black star
+    );
+  }
+</script>
+
+</body>
+</html>

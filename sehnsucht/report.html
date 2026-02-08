@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>REPORTE_DE_SESIÓN_07</title>
+    <style>
+        :root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #8a6a3e; --line: #3b2a14; --alert: #c45a2a; }
+        body { background: var(--bg); color: var(--fg); font-family: "Lucida Console", monospace; padding: 40px; font-size: 12px; line-height: 1.5; }
+        .report-header { border-bottom: 1px solid var(--line); margin-bottom: 30px; padding-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .metric-box { border: 1px solid var(--line); padding: 20px; background: rgba(214, 161, 92, 0.02); }
+        .metric-val { font-size: 24px; font-weight: bold; display: block; margin-top: 10px; }
+        .log-area { border: 1px solid var(--line); padding: 15px; height: 300px; overflow-y: auto; font-size: 11px; color: var(--fg-dim); }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #1a150f; padding-bottom: 5px; }
+        .meta { color: var(--fg-dim); text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; }
+        h2 { font-size: 14px; letter-spacing: 0.2em; margin-bottom: 15px; border-bottom: 1px solid var(--line); display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <div class="report-header">
+        <div class="meta">ARCHIVE_SYSTEM_V.07</div>
+        <h1 style="letter-spacing:0.3em; margin:10px 0;">REPORTE_POST_SESIÓN</h1>
+        <p id="session-time" class="meta">INICIALIZANDO_CRONOLOGÍA...</p>
+    </div>
+
+    <div class="grid">
+        <div class="metric-box">
+            <h2>MÉTRICAS_DE_PRESENCIA</h2>
+            <p class="meta">Sujetos Enrolados: <span id="m-enrolled" class="metric-val">0</span></p>
+            <p class="meta">Sujetos Invitados: <span id="m-guests" class="metric-val">0</span></p>
+            <p class="meta">Densidad Total: <span id="m-total" class="metric-val">0</span></p>
+        </div>
+
+        <div>
+            <h2>LOG_DE_EVENTOS_RT</h2>
+            <div id="event-log" class="log-area">
+                <div class="log-entry">> ESPERANDO REGISTRO DE MOVIMIENTO...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCofj5brCnfA279bQ1XLdcFQRzdCZdnO7g",
+        authDomain: "sehnsucht-85761.firebaseapp.com",
+        databaseURL: "https://sehnsucht-85761-default-rtdb.firebaseio.com",
+        projectId: "sehnsucht-85761",
+        storageBucket: "sehnsucht-85761.firebasestorage.app",
+        messagingSenderId: "376830972913",
+        appId: "1:376830972913:web:ff7de28cdbef1db22a6a50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    document.getElementById('session-time').innerText = "FECHA_GENERACIÓN: " + new Date().toLocaleString();
+
+    // ANALÍTICA EN TIEMPO REAL
+    db.ref('students').on('value', snap => {
+        const data = snap.val();
+        const log = document.getElementById('event-log');
+        let enrolled = 0, guests = 0, online = 0;
+
+        for (let id in data) {
+            const user = data[id];
+            if (user.registry === "guest") guests++;
+            else if (user.registry === "logged") enrolled++;
+            
+            if (user.status === "online") {
+                online++;
+                addLogEntry(`SUJETO [${id}] IDENTIFICADO COMO ${user.registry.toUpperCase()}`);
+            }
+        }
+
+        document.getElementById('m-enrolled').innerText = enrolled;
+        document.getElementById('m-guests').innerText = guests;
+        document.getElementById('m-total').innerText = enrolled + guests;
+    });
+
+    function addLogEntry(msg) {
+        const log = document.getElementById('event-log');
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.className = "log-entry";
+        entry.innerText = `[${time}] ${msg}`;
+        log.prepend(entry);
+    }
+</script>
+</body>
+</html>

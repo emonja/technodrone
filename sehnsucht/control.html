@@ -71,19 +71,21 @@
     function toggleMute() { db.ref('global_mute').set(!muteOn); }
 
     async function resetAll() {
-        if(confirm("ATENCIÓN: Se eliminarán todos los invitados y se pondrá a los alumnos en offline. ¿Proceder?")) {
-            const snap = await db.ref('students').once('value');
-            const upd = {};
-            snap.forEach(c => { 
-                if(c.val().registry === "guest") { upd[`students/${c.key}`] = null; }
-                else { 
-                    upd[`students/${c.key}/status`] = "offline"; 
-                    upd[`students/${c.key}/registry`] = "no record"; 
-                }
-            });
-            db.ref().update(upd);
-        }
+    if(confirm("¿RESETEAR SISTEMA?")) {
+        const snap = await db.ref('students').once('value');
+        const upd = {};
+        snap.forEach(c => { 
+            if(c.val().registry === "guest") { 
+                upd[`students/${c.key}`] = null; // Borrado físico del invitado
+            } else { 
+                upd[`students/${c.key}/status`] = "offline"; 
+                upd[`students/${c.key}/registry`] = "no record"; 
+            }
+        });
+        await db.ref().update(upd);
+        alert("BASE DE DATOS DEPURADA");
     }
+}
 </script>
 </body>
 </html>

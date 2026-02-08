@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MONITOR_COLECTIVO_07</title>
+    <style>
+        :root { 
+            --bg: #0b0a07; 
+            --fg: #d6a15c; 
+            --fg-dim: #8a6a3e; 
+            --line: #3b2a14; 
+            --prof: #d6a15c; /* Ámbar para consistencia */
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--fg); 
+            font-family: "Lucida Console", "Monaco", monospace; 
+            padding: 30px; 
+            font-size: 12px; 
+        }
+        header { 
+            border-bottom: 1px solid var(--line); 
+            margin-bottom: 20px; 
+            padding-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 15px; 
+        }
+        .card { 
+            border: 1px solid var(--line); 
+            padding: 12px; 
+            opacity: 0.4; 
+            transition: 0.3s; 
+            position: relative;
+        }
+        .card.online { 
+            border-color: var(--fg); 
+            opacity: 1; 
+            background: rgba(214, 161, 92, 0.05); 
+            box-shadow: 0 0 10px rgba(214, 161, 92, 0.1);
+        }
+        /* Distinción para Profesores y Sujeto L666 */
+        .card.role-prof { border-style: double; border-width: 3px; }
+        .card.role-test { border-color: #fff; color: #fff; }
+        
+        .meta { 
+            font-size: 10px; 
+            color: var(--fg-dim); 
+            text-transform: uppercase; 
+            display: block;
+            margin-top: 4px;
+        }
+        .id-label { 
+            font-weight: bold; 
+            border-bottom: 1px solid var(--line); 
+            margin-bottom: 8px; 
+            display: block; 
+            letter-spacing: 1px;
+        }
+        .stats-container { text-align: right; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <div class="meta">PROTOCOLO_SEHNSUCHT</div>
+            <h1 style="font-size:18px; letter-spacing:0.2em; margin:0;">MONITOR_DEL_COLECTIVO</h1>
+        </div>
+        <div class="stats-container">
+            <div id="stats" class="meta">ESCANEANDO_RED...</div>
+            <div id="sync-status" class="meta" style="color:var(--fg);">SYNC: OFF</div>
+        </div>
+    </header>
+
+    <div class="grid" id="main-grid"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCofj5brCnfA279bQ1XLdcFQRzdCZdnO7g",
+        authDomain: "sehnsucht-85761.firebaseapp.com",
+        databaseURL: "https://sehnsucht-85761-default-rtdb.firebaseio.com",
+        projectId: "sehnsucht-85761",
+        storageBucket: "sehnsucht-85761.firebasestorage.app",
+        messagingSenderId: "376830972913",
+        appId: "1:376830972913:web:ff7de28cdbef1db22a6a50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Listener de Sincronía Global
+    db.ref('global_sync/active').on('value', snap => {
+        document.getElementById('sync-status').innerText = snap.val() ? "SYNC: ACTIVE" : "SYNC: OFF";
+    });
+
+    // Listener Principal de Usuarios
+    db.ref('students').on('value', snap => {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = "";
+        let onlineCount = 0;
+        const data = snap.val();
+
+        if (!data) return;
+
+        for (let id in data) {
+            const user = data[id];
+            const isOnline = user.status === "online" || user.status === "individual online";
+            if (isOnline) onlineCount++;
+            
+            const card = document.createElement('div');
+            
+            // Lógica de Roles Expandida
+            let roleLabel = "ESTUDIANTE";
+            let roleClass = "";
+
+            if (id === "L666") {
+                roleLabel = "SUJETO_PRUEBA";
+                roleClass = "role-test";
+            } else if (id.startsWith('L')) {
+                roleLabel = "CATEDRÁTICO";
+                roleClass = "role-prof";
+            } else if (user.registry === "guest") {
+                roleLabel = "INVITADO";
+            }
+
+            card.className = `card ${isOnline ? 'online' : ''} ${roleClass}`;
+            card.innerHTML = `
+                <span class="id-label">[${id}]</span>
+                <span style="display:block; margin-bottom:4px;">${(user.estudiante || "SIN_NOMBRE").toUpperCase()}</span>
+                <span class="meta">ROL: ${roleLabel}</span>
+                <span class="meta">ST: ${user.status ? user.status.toUpperCase() : "OFFLINE"}</span>
+            `;
+            grid.appendChild(card);
+        }
+        document.getElementById('stats').innerText = `NODOS: ${Object.keys(data).length} | ACTIVOS: ${onlineCount}`;
+    });
+</script>
+</body>
+</html>

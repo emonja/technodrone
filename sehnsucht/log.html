@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Log: Sehnsucht Protocol</title>
+    <style>
+        /* Estética Fósforo Ámbar */
+        :root { 
+            --bg: #0b0a07; 
+            --fg: #d6a15c; 
+            --fg-dim: #8a6a3e; 
+            --line: #3b2a14; 
+            --alert: #c45a2a; 
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--fg-dim);
+            font-family: 'Lucida Console', 'Monaco', monospace;
+            line-height: 1.5;
+            padding: 40px 20px;
+            max-width: 850px;
+            margin: auto;
+        }
+        h1, h2 { color: var(--fg); border-bottom: 1px solid var(--line); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.18em; }
+        h1 { font-size: 20px; }
+        h2 { font-size: 14px; margin-top: 40px; }
+        .meta { color: var(--fg-dim); font-size: 0.8rem; margin-bottom: 30px; text-transform: uppercase; }
+        .note { border-left: 2px solid var(--fg); padding-left: 20px; margin: 20px 0; background: rgba(214, 161, 92, 0.02); padding-top: 10px; padding-bottom: 10px; }
+        .tech-spec { background: #111; padding: 15px; border: 1px solid var(--line); color: var(--fg); font-size: 0.9rem; }
+        strong { color: var(--fg); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8rem; border: 1px solid var(--line); }
+        th, td { padding: 12px; border: 1px solid var(--line); text-align: left; }
+        th { background: rgba(214, 161, 92, 0.05); color: var(--fg); }
+        hr { border: 0; border-top: 1px dashed var(--line); margin: 40px 0; }
+        .tag { display: inline-block; background: var(--line); color: var(--fg); padding: 2px 8px; font-size: 0.7rem; margin-right: 5px; text-transform: uppercase; }
+        footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--line); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>LOG DE CONSTRUCCIÓN: SEHNSUCHT</h1>
+        <div class="meta">
+            PROYECTO: Generador de Pulso Psicométrico Colectivo<br>
+            ESTADO: Bloqueado / Operativo<br>
+            VERSIÓN: 1.2.0 (Red Distribuida)
+        </div>
+    </header>
+
+    <section>
+        <h2>01. VISIÓN GENERAL</h2>
+        <p>
+            Desarrollo de una arquitectura de red para la generación de pulsos sonoros colectivos. El sistema ha evolucionado de un oscilador individual a un enjambre sincronizado donde el control se alterna entre la subjetividad del usuario y la autoridad de un mando maestro.
+        </p>
+    </section>
+
+    <section>
+        <h2>02. ESPECIFICACIONES TÉCNICAS</h2>
+        <div class="tech-spec">
+            - Motor de Audio: Web Audio API (Sintetizador Sustractivo Monofónico)<br>
+            - Backend: Firebase Realtime Database (Sincronía en < 100ms)<br>
+            - Visualización: Canvas HTML5 (Persistent Ripple Ghosting)<br>
+            - Interfaz: Estética Ámbar Terminal 07 (Baja contaminación cultural)
+        </div>
+    </section>
+
+    <section>
+        <h2>03. ARQUITECTURA DE DATOS (PSICO-MAPEO)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pregunta de Usuario</th>
+                    <th>Parámetro Audio</th>
+                    <th>Configuración Técnica</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>P1: Tiempo Interno</td>
+                    <td>BPM (Tempo)</td>
+                    <td>45bpm (Lento) | 80bpm (Normal) | 140bpm (Rápido)</td>
+                </tr>
+                <tr>
+                    <td>P2: Textura</td>
+                    <td>Waveform / Freq</td>
+                    <td>Sine (440Hz) | Saw (110Hz) | Square (110Hz)</td>
+                </tr>
+                <tr>
+                    <td>P3: Persistencia</td>
+                    <td>ADSR (Release)</td>
+                    <td>0.2s (Efímero) | 1.5s (Persistente)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>04. PROTOCOLO DE RED DISTRIBUIDA</h2>
+        <div class="note">
+            <strong>Nodo Sujeto (index.html):</strong> Actúa como cliente receptor. Registra la matrícula del alumno, el estado de presencia ("online") y permite la interacción individual hasta recibir una señal de sobreescritura global.
+        </div>
+        <div class="note">
+            <strong>Monitor de Colectivo (monitor.html):</strong> Visualización en tiempo real de todos los nodos activos. Clasifica usuarios por rol: Estudiante, Catedrático (IDs con 'L'), Sujeto L666 e Invitados.
+        </div>
+        <div class="note">
+            <strong>Control Maestro (control.html):</strong> Mando de autoridad. Capaz de activar la sincronía global de frecuencia y tempo, silenciar el colectivo (Mute) o resetear el registro de asistencia de la base de datos.
+        </div>
+    </section>
+
+    <section>
+        <h2>05. NOTAS DE SEGURIDAD Y AUDIO</h2>
+        <p>
+            Se implementó el <strong>Protocolo de Invitados</strong>, permitiendo que cualquier ID con formato canónico acceda al sistema y sea monitoreado, incluso si no figura en la matrícula original. El ajuste de frecuencia para ondas senoidales (440Hz) garantiza que la presencia acústica sea perceptible en altavoces móviles de baja fidelidad.
+        </p>
+    </section>
+<section>
+    <h2>11. INTEGRACIÓN DE ARCHIVO Y AMBIENTE SONORO</h2>
+    <div class="note">
+        <strong>Interfaz de Acceso (structure.html):</strong> Se implementó un portal de entrada basado en la estética Technodrone, vinculando los cuatro nodos críticos: Nodo, Monitor, Maestro y Bitácora.
+    </div>
+    <div class="note">
+        <strong>Handshake Audio:</strong> Se integró el soporte para <code>sounds/hadshake.mp3</code>, manteniendo la ambiencia original del repositorio Technodrone para la inicialización del sistema.
+    </div>
+    <div class="note">
+        <strong>Persistencia de Datos:</strong> El sistema ahora gestiona roles diferenciados (Estudiante, Catedrático, Sujeto L666 e Invitados) con actualización de estado en tiempo real vía Firebase.
+    </div>
+    <p style="font-size: 0.7rem;">ESTADO: ARCHIVO SELLADO // TODAS LAS UNIDADES OPERATIVAS // 2026</p>
+</section>
+    <hr>
+
+    <footer>
+        <div class="tag">FIREBASE-RTDB</div>
+        <div class="tag">WEB-AUDIO</div>
+        <div class="tag">TERMINAL-07</div>
+        <p style="font-size: 0.7rem; color: var(--fg-dim);">
+            SISTEMA FINALIZADO — OPERACIÓN CONTINUA — FECHA: 08-02-2026
+        </p>
+    </footer>
+
+</body>
+</html>

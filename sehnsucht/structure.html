@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SEHNSUCHT://ARCHIVE</title>
+    <style>
+        :root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #444; --line: #1a150f; }
+        body {
+            background-color: var(--bg); color: var(--fg-dim);
+            font-family: 'Lucida Console', monospace; font-size: 13px;
+            padding: 25px; display: flex; flex-direction: column; height: 100vh; margin: 0;
+            box-sizing: border-box; overflow: hidden; -webkit-tap-highlight-color: transparent;
+        }
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 100;
+        }
+        header { border-bottom: 1px solid var(--line); padding: 20px 0; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; font-size: 11px; }
+        .row {
+            display: grid; grid-template-columns: 100px 60px auto; gap: 10px;
+            padding: 14px 0; border-bottom: 1px solid var(--line); opacity: 0; transform: translateY(5px);
+        }
+        .row.visible { opacity: 1; transform: translateY(0); transition: 0.6s ease; }
+        .row a { color: var(--fg); text-decoration: none; text-transform: uppercase; letter-spacing: 1px; }
+        .row a:hover { color: #fff; text-shadow: 0 0 8px var(--fg); }
+        .glitch-active { filter: invert(1) contrast(150%); opacity: 0.8; }
+        footer { padding: 20px 0; color: #3b2a14; font-size: 9px; border-top: 1px solid var(--line); letter-spacing: 1px; }
+        #snd-ctrl { position: fixed; bottom: 25px; right: 25px; z-index: 101; cursor: pointer; color: #3b2a14; font-size: 10px; padding: 10px; border: 1px solid var(--line); background: var(--bg); }
+        #snd-ctrl.active { color: var(--fg); border-color: var(--fg); }
+        .blink { animation: blinker 1.2s step-start infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<audio id="handshake-audio" loop src="sounds/hadshake.mp3"></audio>
+<div id="snd-ctrl" onclick="toggleSnd()">AUDIO_LINK: OFF</div>
+
+<header id="header-text"></header>
+
+<div class="dir-listing" id="listing">
+    <div class="row" id="r0" style="color: #2a1f11;"><span>STAMP</span><span>TYPE</span><span>NODE_ID</span></div>
+    <div class="row" id="r1"><span>08.02.26</span><span>[PUL]</span><a href="index.html">I-PULSE (NODO_COLECTIVO)</a></div>
+    <div class="row" id="r2"><span>08.02.26</span><span>[MON]</span><a href="monitor.html">I-CONSOLE (OBSERVADOR)</a></div>
+    <div class="row" id="r3"><span>08.02.26</span><span>[CTRL]</span><a href="control.html">I-MASTER (MANDO_SINCRONÍA)</a></div>
+    <div class="row" id="r4"><span>08.02.26</span><span>[LOG]</span><a href="log.html">I-BITÁCORA (REGISTRO_BUILD)</a></div>
+</div>
+
+<footer id="footer-bits">TERMINAL_V.07 // SEHNSUCHT_CORE_INIT <br>STATUS: ARCHIVE_DECRYPTED</footer>
+
+<script>
+    const headerStr = "ROOT://SEHNSUCHT_ARCHIVE";
+    const headerEl = document.getElementById('header-text');
+    const listingEl = document.getElementById('listing');
+    const audio = document.getElementById('handshake-audio');
+    const sndBtn = document.getElementById('snd-ctrl');
+
+    let charIdx = 0;
+    function type() {
+        if (charIdx < headerStr.length) {
+            headerEl.innerHTML += headerStr.charAt(charIdx); charIdx++;
+            setTimeout(type, 50);
+        } else {
+            headerEl.innerHTML += ' <span class="blink">_</span>';
+            ['r0','r1','r2','r3','r4'].forEach((id, i) => {
+                setTimeout(() => document.getElementById(id).classList.add('visible'), i * 100);
+            });
+        }
+    }
+
+    function toggleSnd() {
+        if (audio.paused) {
+            audio.play().catch(e => console.log("Blocked"));
+            sndBtn.innerHTML = "AUDIO_LINK: ACTIVE"; sndBtn.classList.add('active');
+        } else {
+            audio.pause(); sndBtn.innerHTML = "AUDIO_LINK: OFF"; sndBtn.classList.remove('active');
+        }
+    }
+
+    document.addEventListener('touchstart', (e) => {
+        if (e.target.tagName !== 'A') {
+            listingEl.classList.add('glitch-active');
+            setTimeout(() => listingEl.classList.remove('glitch-active'), 80);
+        }
+    }, {passive: true});
+
+    window.onload = type;
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TERMINAL_07 - NODO</title>
+    <style>
+        :root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #8a6a3e; --line: #3b2a14; --alert: #c45a2a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--fg); font-family: "Lucida Console", Monaco, monospace; font-size: 13px; padding: 20px; overflow: hidden; }
+        .system { max-width: 400px; margin: 0 auto; border: 1px solid var(--line); padding: 24px; position: relative; z-index: 10; background: var(--bg); }
+        .meta { color: var(--fg-dim); text-transform: uppercase; font-size: 11px; letter-spacing: 0.12em; margin-bottom: 5px; }
+        h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.18em; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 15px; }
+        input { width: 100%; background: transparent; border: 1px solid var(--line); color: var(--fg); padding: 10px; margin-bottom: 15px; font-family: inherit; }
+        .choice-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; background: transparent; border: 1px solid var(--line); color: var(--fg); cursor: pointer; text-align: left; text-transform: uppercase; }
+        .choice-btn:hover { background: var(--line); }
+        #ctrl-btn { position: fixed; top: 20px; right: 20px; z-index: 110; padding: 10px; border: 1px solid var(--fg); background: var(--bg); color: var(--fg); cursor: pointer; text-transform: uppercase; font-size: 10px; }
+        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.6; }
+        .hud { position: fixed; bottom: 15px; left: 15px; font-size: 10px; color: var(--fg-dim); z-index: 5; line-height: 1.4; background: rgba(11,10,7,0.8); padding: 5px; border-left: 1px solid var(--fg); }
+        .hidden { display: none !important; }
+        .blink { animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <canvas id="viz"></canvas>
+    <button id="ctrl-btn" class="hidden" onclick="togglePulse()">INICIAR_PULSO</button>
+
+    <div class="system" id="terminal">
+        <div class="meta">UNIDAD: NODO_SEHNSUCHT</div>
+        <h1 id="main-title">ACCESO AL SISTEMA</h1>
+
+        <div id="step-login">
+            <p class="meta">INGRESE ID CANÓNICO [A/L]########</p>
+            <input type="text" id="subjectId" maxlength="9" placeholder="ID_SUJETO" spellcheck="false">
+            <button class="choice-btn" style="text-align:center" onclick="validateLogin()">EJECUTAR_IDENTIFICACIÓN</button>
+            <p id="login-status" class="meta" style="margin-top:10px; text-align:center;"></p>
+        </div>
+
+        <div id="step-directive" class="hidden">
+            <p style="color:var(--alert); text-align:center;">AVISO: PROTOCOLO ACÚSTICO</p>
+            <p style="margin: 15px 0;">1. VOLUMEN AL MÁXIMO.<br>2. PROHIBIDO USO DE AURICULARES.</p>
+            <button class="choice-btn" style="text-align:center" onclick="proceedToSurvey()">ACEPTAR_DIRECTIVA</button>
+        </div>
+
+        <div id="step-q" class="hidden">
+            <p id="q-text" class="meta"></p>
+            <div id="q-options"></div>
+        </div>
+    </div>
+
+    <div id="hud" class="hud hidden"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCofj5brCnfA279bQ1XLdcFQRzdCZdnO7g",
+        authDomain: "sehnsucht-85761.firebaseapp.com",
+        databaseURL: "https://sehnsucht-85761-default-rtdb.firebaseio.com",
+        projectId: "sehnsucht-85761",
+        storageBucket: "sehnsucht-85761.firebasestorage.app",
+        messagingSenderId: "376830972913",
+        appId: "1:376830972913:web:ff7de28cdbef1db22a6a50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let audioCtx, intervalId;
+    let isRunning = false, isSynced = false, isMuted = false;
+    let ripples = [];
+    let LOCAL_CONFIG = { bpm: 80, wave: 'sine', freq: 110, release: 0.8 };
+    let SYNC_CONFIG = {};
+    let CURRENT_ID = "", ROLE = "INVITADO";
+
+    db.ref('global_sync').on('value', snap => {
+        const data = snap.val();
+        if (data && data.active) {
+            isSynced = true; SYNC_CONFIG = data.params;
+            document.getElementById('main-title').innerText = "SISTEMA_SINCRONIZADO";
+            if(isRunning) restartPulse();
+        } else {
+            isSynced = false;
+            document.getElementById('main-title').innerText = isRunning ? "PROCESO_ACTIVO" : "ACCESO AL SISTEMA";
+            if(isRunning) restartPulse();
+        }
+    });
+
+    db.ref('global_mute').on('value', snap => { isMuted = snap.val() || false; });
+
+    async function validateLogin() {
+        const input = document.getElementById('subjectId');
+        const statusLabel = document.getElementById('login-status');
+        CURRENT_ID = input.value.toUpperCase();
+        
+        if (!/^[AL]\d{8}$/.test(CURRENT_ID) && CURRENT_ID !== "L666") {
+            statusLabel.innerText = "ERROR: ID NO CANÓNICO";
+            return;
+        }
+
+        statusLabel.innerText = "VERIFICANDO...";
+        const snap = await db.ref('students/' + CURRENT_ID).once('value');
+        
+        if (snap.exists()) {
+            ROLE = CURRENT_ID.startsWith('L') ? "CATEDRÁTICO" : "ESTUDIANTE";
+            if(CURRENT_ID === "L666") ROLE = "SUJETO_PRUEBA";
+            await db.ref('students/' + CURRENT_ID).update({ registry: "logged", status: "online" });
+            statusLabel.innerText = "ACCESO_AUTORIZADO";
+        } else {
+            ROLE = "INVITADO";
+            await db.ref('students/' + CURRENT_ID).set({ estudiante: "INVITADO", registry: "guest", status: "online" });
+            statusLabel.innerText = "MODO_INVITADO_HABILITADO";
+        }
+
+        setTimeout(() => {
+            document.getElementById('step-login').classList.add('hidden');
+            document.getElementById('step-directive').classList.remove('hidden');
+        }, 1000);
+    }
+
+    function proceedToSurvey() {
+        document.getElementById('step-directive').classList.add('hidden');
+        document.getElementById('step-q').classList.remove('hidden');
+        renderQ(1);
+    }
+
+    function renderQ(step) {
+        const text = document.getElementById('q-text');
+        const container = document.getElementById('q-options');
+        container.innerHTML = "";
+        if(step === 1) {
+            text.innerText = "> P1: TIEMPO_INTERNO";
+            [['LENTO', 45], ['NORMAL', 80], ['RÁPIDO', 140]].forEach(opt => {
+                let b = document.createElement('button'); b.className = "choice-btn"; b.innerText = opt[0];
+                b.onclick = () => { LOCAL_CONFIG.bpm = opt[1]; renderQ(2); };
+                container.appendChild(b);
+            });
+        } else if(step === 2) {
+            text.innerText = "> P2: TEXTURA";
+            [['FLUIDA', 'sine'], ['DENTADA', 'sawtooth'], ['RÍGIDA', 'square']].forEach(opt => {
+                let b = document.createElement('button'); b.className = "choice-btn"; b.innerText = opt[0];
+                b.onclick = () => { 
+                    LOCAL_CONFIG.wave = opt[1];
+                    LOCAL_CONFIG.freq = opt[1] === 'sine' ? 440 : 110;
+                    renderQ(3);
+                };
+                container.appendChild(b);
+            });
+        } else {
+            text.innerText = "> P3: PERSISTENCIA";
+            [['CORTA', 0.2], ['LARGA', 1.5]].forEach(opt => {
+                let b = document.createElement('button'); b.className = "choice-btn"; b.innerText = opt[0];
+                b.onclick = () => { LOCAL_CONFIG.release = opt[1]; document.getElementById('terminal').classList.add('hidden'); initPulse(); };
+                container.appendChild(b);
+            });
+        }
+    }
+
+    function initPulse() {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        document.getElementById('ctrl-btn').classList.remove('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+        if(!isRunning) togglePulse();
+        animate();
+    }
+
+    function togglePulse() {
+        const btn = document.getElementById('ctrl-btn');
+        if (!isRunning) {
+            isRunning = true; btn.innerText = "TERMINAR"; restartPulse();
+        } else {
+            isRunning = false; btn.innerText = "INICIAR_PULSO"; clearInterval(intervalId);
+        }
+    }
+
+    function restartPulse() {
+        clearInterval(intervalId);
+        if(!isRunning) return;
+        const config = isSynced ? SYNC_CONFIG : LOCAL_CONFIG;
+        intervalId = setInterval(playTone, (60 / config.bpm) * 1000);
+    }
+
+    function playTone() {
+        if (isMuted || !isRunning) return;
+        const config = isSynced ? SYNC_CONFIG : LOCAL_CONFIG;
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = config.wave; o.frequency.setValueAtTime(config.freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(0, audioCtx.currentTime);
+        g.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + config.release);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + config.release + 0.1);
+        ripples.push({ r: 0, a: 1 });
+    }
+
+    const canvas = document.getElementById('viz'); const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    function animate() {
+        ctx.fillStyle = 'rgba(11, 10, 7, 0.2)'; ctx.fillRect(0,0,canvas.width, canvas.height);
+        ripples.forEach((rip, i) => {
+            ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, rip.r, 0, Math.PI*2);
+            ctx.strokeStyle = `rgba(214, 161, 92, ${rip.a})`; ctx.stroke();
+            rip.r += 3; rip.a -= 0.01; if(rip.a <= 0) ripples.splice(i,1);
+        });
+        
+        const c = isSynced ? SYNC_CONFIG : LOCAL_CONFIG;
+        const note = c.freq === 440 ? "A4" : (c.freq === 110 ? "A2" : "HZ");
+        document.getElementById('hud').innerHTML = `
+            ID: ${CURRENT_ID} | ROL: ${ROLE}<br>
+            STATUS: ${isMuted ? 'SILENCIO' : (isSynced ? 'SYNC_MAESTRO' : 'LOCAL')}<br>
+            FREQ: ${c.freq}Hz (${note}) | ONDA: ${c.wave.toUpperCase()}<br>
+            TEMPO: ${c.bpm}BPM (${(60000/c.bpm).toFixed(0)}ms)<br>
+            ENV: ${c.release >= 1 ? 'PERSISTENTE' : 'EFÍMERO'}
+        `;
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('beforeunload', () => { if (CURRENT_ID) db.ref('students/' + CURRENT_ID).update({ status: "offline" }); });
+</script>
+</body>
+</html>

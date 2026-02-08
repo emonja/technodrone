@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TERMINAL DEL SISTEMA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* -------------------------
+   PALETA FÓSFORO ÁMBAR
+-------------------------- */
+:root {
+  --bg: #0b0a07;
+  --fg: #d6a15c;
+  --fg-dim: #8a6a3e;
+  --line: #3b2a14;
+  --alert: #c45a2a;
+}
+
+/* -------------------------
+   RESET
+-------------------------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* -------------------------
+   BASE
+-------------------------- */
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family:
+    "Lucida Console",
+    "MS Gothic",
+    "Monaco",
+    "Andale Mono",
+    monospace;
+  font-size: 13px;
+  line-height: 1.35;
+  letter-spacing: 0.015em;
+}
+
+/* -------------------------
+   LAYOUT
+-------------------------- */
+body {
+  padding: 28px;
+}
+
+.system {
+  max-width: 920px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  padding: 24px;
+}
+
+/* -------------------------
+   TIPOGRAFÍA
+-------------------------- */
+
+/* Estructural / informativa */
+.label,
+.meta,
+.footer {
+  font-weight: 400;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+/* Autoridad / acción */
+h1, h2, .command, .status {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+h1 {
+  font-size: 16px;
+  margin-bottom: 18px;
+}
+
+h2 {
+  font-size: 13px;
+  margin: 26px 0 10px;
+}
+
+/* Texto base */
+p {
+  margin-bottom: 10px;
+}
+
+/* -------------------------
+   SEPARADORES
+-------------------------- */
+hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 18px 0;
+}
+
+/* -------------------------
+   LISTAS
+-------------------------- */
+ul {
+  list-style: none;
+}
+
+li {
+  margin-bottom: 4px;
+}
+
+li::before {
+  content: "• ";
+  color: var(--fg-dim);
+}
+
+/* -------------------------
+   ENLACES
+-------------------------- */
+a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+a:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* -------------------------
+   ENTRADAS
+-------------------------- */
+input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--fg);
+}
+
+/* -------------------------
+   ESTADOS
+-------------------------- */
+.status.ok {
+  color: var(--fg);
+}
+
+.status.error {
+  color: var(--alert);
+}
+
+/* -------------------------
+   PIE
+-------------------------- */
+.footer {
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="system">
+
+  <div class="label">UNIDAD: TERMINAL_07</div>
+
+  <h1>INTERFAZ DE CONTROL</h1>
+
+  <p class="meta">
+    MODO DE OPERACIÓN: MANUAL<br>
+    AUTORIZACIÓN: REQUERIDA
+  </p>
+
+  <hr>
+
+  <h2>ESTADO DEL SISTEMA</h2>
+  <p class="status ok">FUNCIONAMIENTO NORMAL</p>
+
+  <h2>PROCEDIMIENTOS DISPONIBLES</h2>
+  <ul>
+    <li class="command">CARGAR SECUENCIA</li>
+    <li class="command">VERIFICAR ENTRADA</li>
+    <li class="command">EJECUTAR PROCESO</li>
+    <li class="command">FINALIZAR SESIÓN</li>
+  </ul>
+
+  <h2>REGISTRO DE ACTIVIDAD</h2>
+  <p>
+    19:32:04  ENTRADA REGISTRADA<br>
+    19:32:06  VERIFICACIÓN COMPLETA<br>
+    19:32:07  EN ESPERA DE COMANDO
+  </p>
+
+  <h2>INGRESO DE COMANDO</h2>
+  <input type="text" placeholder="INGRESE COMANDO">
+
+  <div class="footer">
+    TERMINAL REV. B — OPERACIÓN CONTINUA — NO INTERRUMPIR
+  </div>
+
+</div>
+
+</body>
+</html>

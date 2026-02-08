@@ -1,0 +1,24 @@
+{
+  "students": {
+    "A00232392": { "estudiante": "Acosta Limón, Luis Ángel", "registry": "no record", "status": "offline" },
+    "A00572999": { "estudiante": "Aguirre León, María Fernanda", "registry": "no record", "status": "offline" },
+    "A01643306": { "estudiante": "Carrillo Rosa Lopes, Gabriel Alejandro", "registry": "no record", "status": "offline" },
+    "A01648756": { "estudiante": "Casillas Gil, Diego Santiago", "registry": "no record", "status": "offline" },
+    "A01648739": { "estudiante": "García Romero, Michelle", "registry": "no record", "status": "offline" },
+    "A01649094": { "estudiante": "Kelly Soberanes, Mateo", "registry": "no record", "status": "offline" },
+    "A01541196": { "estudiante": "Macías Duarte, Claudio Rafael", "registry": "no record", "status": "offline" },
+    "A01647800": { "estudiante": "Moreno Martínez, Regina", "registry": "no record", "status": "offline" },
+    "A01643608": { "estudiante": "Negrete Gutiérrez, Carlos Gabriel", "registry": "no record", "status": "offline" },
+    "A01645960": { "estudiante": "Núñez Martínez, Melanie", "registry": "no record", "status": "offline" },
+    "A01643433": { "estudiante": "Orozco Haro, María José", "registry": "no record", "status": "offline" },
+    "A01644065": { "estudiante": "Peña Zavala, Camila Giselle", "registry": "no record", "status": "offline" },
+    "A01649340": { "estudiante": "Rodriguez Ambrocio, Aixa Dajani", "registry": "no record", "status": "offline" },
+    "A00841933": { "estudiante": "Salazar Osuna, Marco Antonio", "registry": "no record", "status": "offline" },
+    "A01277671": { "estudiante": "Vilchis Montalvo, Victoria Naomi", "registry": "no record", "status": "offline" },
+    "A01649350": { "estudiante": "Villegas Torres, Maiara Daniela", "registry": "no record", "status": "offline" },
+    "L666": { "estudiante": "Usuario de prueba", "registry": "logged", "status": "individual online" },
+    "L03021622": { "estudiante": "De la Monja Casar, Esteban", "registry": "no record", "status": "offline" },
+    "L03130082": { "estudiante": "De la Mora Gómez, Diego", "registry": "no record", "status": "offline" },
+    "L03037508": { "estudiante": "Sandoval Isaac, Karla Sofía", "registry": "no record", "status": "offline" }
+  }
+}

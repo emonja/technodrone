@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CONTROL_MAESTRO_07</title>
+    <style>
+        :root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #8a6a3e; --line: #3b2a14; --alert: #c45a2a; }
+        body { background: var(--bg); color: var(--fg); font-family: "Lucida Console", monospace; padding: 40px; display: flex; flex-direction: column; align-items: center; }
+        .panel { border: 1px solid var(--line); padding: 30px; width: 450px; background: rgba(214,161,92,0.02); }
+        .master-btn { width: 100%; padding: 15px; background: transparent; border: 1px solid var(--fg); color: var(--fg); cursor: pointer; margin: 10px 0; font-family: inherit; text-transform: uppercase; font-weight: bold; }
+        .master-btn.active { background: var(--fg); color: var(--bg); }
+        .mute-btn { border-color: var(--alert); color: var(--alert); }
+        .mute-btn.active { background: var(--alert); color: var(--bg); }
+        .params { margin-top: 20px; font-size: 11px; border: 1px dashed var(--line); padding: 15px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h2 style="letter-spacing:0.2em; border-bottom:1px solid var(--line); padding-bottom:10px; text-align:center;">MANDO_DE_SINCRONÍA</h2>
+        
+        <button id="sync-btn" class="master-btn" onclick="toggleSync()">ACTIVAR SINCRONIZACIÓN</button>
+        <button id="mute-btn" class="master-btn mute-btn" onclick="toggleMute()">SILENCIO COLECTIVO</button>
+        
+        <div class="params">
+            <span style="color:var(--fg-dim)">PARAM_DE_SOBREESCRITURA:</span><br>
+            FREQ: 110Hz (A2) | ONDA: SAWTOOTH<br>
+            TEMPO: 80 BPM (750ms) | ENV: PERSISTENTE (1.5s)
+        </div>
+
+        <button class="master-btn" style="border-color:var(--line); font-size:10px; color:var(--fg-dim); margin-top:30px;" onclick="resetAll()">RESETEAR_BASE_DE_DATOS</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCofj5brCnfA279bQ1XLdcFQRzdCZdnO7g",
+        authDomain: "sehnsucht-85761.firebaseapp.com",
+        databaseURL: "https://sehnsucht-85761-default-rtdb.firebaseio.com",
+        projectId: "sehnsucht-85761",
+        storageBucket: "sehnsucht-85761.firebasestorage.app",
+        messagingSenderId: "376830972913",
+        appId: "1:376830972913:web:ff7de28cdbef1db22a6a50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let syncOn = false, muteOn = false;
+
+    db.ref('global_sync/active').on('value', snap => {
+        syncOn = snap.val() || false;
+        const b = document.getElementById('sync-btn');
+        b.innerText = syncOn ? "SINCRONÍA_ACTIVA" : "ACTIVAR_SINCRONIZACIÓN";
+        b.className = `master-btn ${syncOn?'active':''}`;
+    });
+
+    db.ref('global_mute').on('value', snap => {
+        muteOn = snap.val() || false;
+        const b = document.getElementById('mute-btn');
+        b.innerText = muteOn ? "SILENCIO_ACTIVO" : "SILENCIO_COLECTIVO";
+        b.className = `master-btn mute-btn ${muteOn?'active':''}`;
+    });
+
+    function toggleSync() {
+        db.ref('global_sync').set({
+            active: !syncOn,
+            params: { bpm: 80, freq: 110, wave: 'sawtooth', release: 1.5 }
+        });
+    }
+
+    function toggleMute() { db.ref('global_mute').set(!muteOn); }
+
+    async function resetAll() {
+        if(confirm("ATENCIÓN: Se eliminarán todos los invitados y se pondrá a los alumnos en offline. ¿Proceder?")) {
+            const snap = await db.ref('students').once('value');
+            const upd = {};
+            snap.forEach(c => { 
+                if(c.val().registry === "guest") { upd[`students/${c.key}`] = null; }
+                else { 
+                    upd[`students/${c.key}/status`] = "offline"; 
+                    upd[`students/${c.key}/registry`] = "no record"; 
+                }
+            });
+            db.ref().update(upd);
+        }
+    }
+</script>
+</body>
+</html>

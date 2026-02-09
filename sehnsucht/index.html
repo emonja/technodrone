@@ -2,119 +2,231 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TERMINAL AR - SISTEMA MÓVIL</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <title>SISTEMA DE SUPERVIVENCIA AR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <style>
-        /* --- INTEGRATED FROM YOUR STYLE.HTML --- */
         :root {
-            --bg: #0b0a07;
-            --fg: #d6a15c;
-            --fg-dim: #8a6a3e;
-            --line: #3b2a14;
-            --alert: #c45a2a;
+          --bg: #0b0a07;
+          --fg: #d6a15c;
+          --fg-dim: #8a6a3e;
+          --line: #3b2a14;
+          --alert: #c45a2a;
         }
 
-        body {
-            margin: 0;
-            overflow: hidden; /* Required for AR */
-            font-family: "Lucida Console", "Monaco", monospace;
-            background-color: #000;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { background: #000; color: var(--fg); font-family: "Lucida Console", monospace; overflow: hidden; width: 100vw; height: 100vh; }
 
-        /* --- THE HUD (OVERLAY) --- */
-        #ar-hud {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10; /* Ensures it stays above the camera */
-            pointer-events: none; /* Allows clicking through to the AR scene */
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            color: var(--fg);
-            text-transform: uppercase;
-        }
-
-        .hud-border {
-            border: 1px solid var(--line);
-            padding: 15px;
-            background: rgba(11, 10, 7, 0.7); /* Semi-transparent version of your bg */
-            pointer-events: auto; /* Re-enable interaction for buttons/inputs */
-        }
-
-        .label, .meta {
-            font-size: 10px;
-            color: var(--fg-dim);
-            letter-spacing: 0.12em;
-        }
-
-        .status.ok { color: var(--fg); text-shadow: 0 0 5px var(--fg); }
+        #video-preview { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         
-        /* Scanline effect for retro feel */
-        #ar-hud::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 11;
-            background-size: 100% 3px, 3px 100%;
-            pointer-events: none;
+        /* Capa de visión con comportamiento errático */
+        #glitch-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; mix-blend-mode: screen; display: none; pointer-events: none;
+            background-color: var(--bg);
+            background-size: cover;
+            background-position: center;
+            /* Filtro base ámbar */
+            filter: sepia(0.6) contrast(1.4) brightness(1.1);
+            transition: opacity 0.03s steps(2), filter 0.03s steps(2);
+        }
+
+        #terminal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 60; pointer-events: none; padding: 20px;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .hud-border { border: 1px solid var(--line); padding: 15px; background: rgba(11, 10, 7, 0.85); backdrop-filter: blur(5px); }
+        .label { color: var(--fg-dim); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+        h1 { font-size: 13px; letter-spacing: 0.15em; margin-bottom: 5px; }
+
+        #target-ui {
+            position: absolute; top: 50%; left: 50%;
+            width: 240px; height: 240px;
+            border: 1px solid rgba(214, 161, 92, 0.2);
+            transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            padding-bottom: 15px;
+        }
+        #target-ui::before, #target-ui::after { content: ""; position: absolute; width: 30px; height: 30px; border: 2px solid var(--fg); }
+        #target-ui::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+        #target-ui::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+
+        #target-hint { font-size: 10px; text-align: center; color: var(--fg); text-transform: uppercase; font-weight: bold; text-shadow: 0 0 8px #000; }
+
+        #navigation-ui { display: none; text-align: center; margin-bottom: 30px; }
+        .alert-msg { font-size: 16px; font-weight: bold; color: var(--alert); text-transform: uppercase; margin-bottom: 5px; }
+        .arrow { font-size: 80px; color: var(--alert); display: inline-block; animation: pulse 0.8s ease-out infinite; }
+
+        @keyframes pulse { 0% { opacity: 0.2; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1); } 100% { opacity: 0.2; transform: scale(0.9); } }
+        
+        /* Scanlines CRT */
+        #terminal-overlay::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+            background-size: 100% 4px; z-index: 61; pointer-events: none;
         }
     </style>
 </head>
-
 <body>
 
-    <div id="ar-hud">
+    <video id="video-preview" autoplay playsinline></video>
+    <canvas id="qr-canvas" style="display:none;"></canvas>
+    <div id="glitch-overlay"></div>
+
+    <div id="terminal-overlay">
         <div class="hud-border">
-            <div class="label">UNIDAD: TERMINAL_AR_MOBILE</div>
-            <div class="status ok">SCANNING FOR QR_DATA...</div>
-            <hr style="border:0; border-top:1px solid var(--line); margin:10px 0;">
-            <div class="meta">MODO: VINCULACIÓN AR<br>AUTORIZACIÓN: NIVEL 1</div>
+            <div class="label">ESTADO: <span id="sys-mode">SINCRONIZACIÓN NARRATIVA</span></div>
+            <h1 id="system-status">SISTEMA INICIADO</h1>
         </div>
 
-        <div class="hud-border" style="margin-top: auto;">
-            <div class="meta">INPUT_COMMAND:</div>
-            <input type="text" style="background:transparent; border:1px solid var(--line); color:var(--fg); width:100%; padding:5px;" placeholder="WAITING...">
+        <div id="target-ui">
+            <div id="target-hint">BUSQUE PUNTO 00 (PIZARRÓN)</div>
+        </div>
+
+        <div id="navigation-ui">
+            <div class="alert-msg" id="nav-text">---</div>
+            <div class="arrow" id="nav-arrow">➔</div>
+        </div>
+
+        <div class="hud-border" style="font-size: 9px; color: var(--fg-dim);">
+            PROTOCOLO_VISIÓN_PERSISTENTE // REF: SURVIVOR
         </div>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-        
-        <a-assets>
-            <img id="hint-frame" src="https://via.placeholder.com/512/d6a15c/000000?text=DATA_FRAME">
-        </a-assets>
-
-        <a-marker preset="hiro">
-            <a-plane position="0 0 0" rotation="-90 0 0" width="1.5" height="1.5" 
-                     material="src: #hint-frame; transparent: true; opacity: 0.8;">
-                <a-animation attribute="material.opacity" from="0.2" to="0.8" dur="500" repeat="indefinite"></a-animation>
-            </a-plane>
-            
-            <a-text value="SISTEMA DETECTADO" color="#d6a15c" align="center" position="0 1 0" rotation="-90 0 0"></a-text>
-        </a-marker>
-
-        <a-entity camera></a-entity>
-    </a-scene>
-
     <script>
-        // Log activity to terminal when marker is found
-        const marker = document.querySelector('a-marker');
-        marker.addEventListener('markerFound', () => {
-            console.log("QR Code Decrypted: Sequence Initiated.");
-            document.querySelector('.status').innerText = "VINCULACIÓN EXITOSA";
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('qr-canvas');
+        const context = canvas.getContext('2d');
+        const glitchOverlay = document.getElementById('glitch-overlay');
+        const targetHint = document.getElementById('target-hint');
+        const navUI = document.getElementById('navigation-ui');
+        const navText = document.getElementById('nav-text');
+        const navArrow = document.getElementById('nav-arrow');
+        const sysStatus = document.getElementById('system-status');
+
+        let loopInterval = null;
+        let scanLock = false;
+        const arrowMap = { "right": "➔", "left": "⬅", "down": "⬇", "up": "⬆", "none": "" };
+
+        const STAGES = {
+            "Stage00": {
+                msg: "SALGA DEL SALÓN AHORA",
+                hint: "LOCALICE QR EN EL BALCÓN",
+                images: ["stage01-00.jpg", "stage01-01.jpg"],
+                arrow: "right"
+            },
+            "Stage01": {
+                msg: "GIRA A LA IZQUIERDA",
+                hint: "LOCALICE QR EN ESCALERAS",
+                images: ["stage01-02.jpg", "stage01-03.jpg", "stage01-04.jpg", "stage01-05.jpg", "stage01-06.jpg"],
+                arrow: "left"
+            },
+            "Stage02": {
+                msg: "SIGUE BAJANDO",
+                hint: "BUSQUE QR EN RECICLAJE (PLANTA BAJA)",
+                images: ["stage02-00.jpg", "stage02-01.jpg", "stage02-02.jpg", "stage02-03.jpg", "stage02-04.jpg"],
+                arrow: "down"
+            },
+            "Stage03": {
+                msg: "SALGA AL EXTERIOR",
+                hint: "LOCALICE QR EN POSTE DE LUZ",
+                images: ["stage03-00.jpg", "stage03-01.jpg", "stage03-02.jpg", "stage03-03.jpg"],
+                arrow: "up"
+            },
+            "Stage04": {
+                msg: "BUSCA EL REFUGIO (GIMNASIO)",
+                hint: "LOCALICE QR FINAL EN POSTE",
+                images: ["stage04-00.jpg", "stage04-01.jpg", "stage04-02.jpg", "stage03-03.jpg"],
+                arrow: "up"
+            },
+            "Refuge": {
+                msg: "REFUGIO ALCANZADO",
+                hint: "CONEXIÓN FINAL",
+                images: ["stage00-00.jpg", "stage04-02.jpg", "stage01-05.jpg", "stage02-03.jpg"],
+                isFinal: true
+            }
+        };
+
+        window.addEventListener('load', () => {
+            initCamera();
+            startLoop(["stage00-00.jpg"]); 
         });
-        
-        marker.addEventListener('markerLost', () => {
-            document.querySelector('.status').innerText = "BUSCANDO SEÑAL...";
-        });
+
+        function initCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => { video.srcObject = stream; requestAnimationFrame(tick); })
+                .catch(err => { sysStatus.innerText = "ERROR ÓPTICO"; });
+        }
+
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA && !scanLock) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                if (code && STAGES[code.data]) { processScan(STAGES[code.data]); }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function startLoop(images) {
+            if (loopInterval) clearInterval(loopInterval);
+            glitchOverlay.style.display = 'block';
+            let idx = 0;
+
+            const nextFrame = () => {
+                glitchOverlay.style.backgroundImage = `url('sequence/${images[idx]}')`;
+                
+                const rand = Math.random();
+
+                if (rand > 0.92) {
+                    // FALLO DE REALIDAD: La visión desaparece y vemos la cámara pura
+                    glitchOverlay.style.opacity = "0";
+                } else if (rand > 0.8) {
+                    // IMPACTO TOTAL: La imagen de la visión se vuelve opaca y sin tinte
+                    glitchOverlay.style.opacity = "1";
+                    glitchOverlay.style.filter = "sepia(0) contrast(1.1) brightness(1.2)";
+                } else {
+                    // MODO NORMAL: Visión persistente con tinte ámbar
+                    glitchOverlay.style.opacity = "0.88";
+                    glitchOverlay.style.filter = "sepia(0.6) contrast(1.4) brightness(1.1)";
+                }
+
+                idx = (idx + 1) % images.length;
+            };
+
+            nextFrame();
+            loopInterval = setInterval(nextFrame, 400); 
+        }
+
+        async function processScan(config) {
+            scanLock = true;
+            sysStatus.innerText = "ACCESO RECONOCIDO";
+
+            // Flash de impacto al escanear
+            glitchOverlay.style.opacity = "1";
+            glitchOverlay.style.filter = "invert(1) contrast(2)";
+            await new Promise(r => setTimeout(r, 100));
+
+            if (config.isFinal) {
+                startLoop(config.images);
+                await new Promise(r => setTimeout(r, 4000));
+                window.location.href = "pulse.html";
+                return;
+            }
+
+            startLoop(config.images);
+            navText.innerText = config.msg;
+            targetHint.innerText = config.hint;
+            navArrow.innerText = arrowMap[config.arrow] || "";
+            navUI.style.display = 'block';
+
+            setTimeout(() => { scanLock = false; }, 3500);
+        }
     </script>
 </body>
 </html>

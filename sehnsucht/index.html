@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SISTEMA DE SUPERVIVENCIA AR</title>
+    <title>SISTEMA DE SUPERVIVENCIA AR - HIGH CONTRAST</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
@@ -20,16 +20,23 @@
 
         #video-preview { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         
-        /* Capa de visión con comportamiento errático */
+        /* Capa para oscurecer la cámara si hay mucha luz */
+        #camera-shroud {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; opacity: 0.4; z-index: 2; pointer-events: none;
+        }
+
+        /* Capa de visión reforzada */
         #glitch-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 50; mix-blend-mode: screen; display: none; pointer-events: none;
+            z-index: 50; 
+            mix-blend-mode: hard-light; /* Más agresivo que 'screen' para evitar el deslavado */
+            display: none; pointer-events: none;
             background-color: var(--bg);
             background-size: cover;
             background-position: center;
-            /* Filtro base ámbar */
-            filter: sepia(0.6) contrast(1.4) brightness(1.1);
-            transition: opacity 0.03s steps(2), filter 0.03s steps(2);
+            filter: contrast(1.5) brightness(1.2);
+            transition: opacity 0.03s steps(2);
         }
 
         #terminal-overlay {
@@ -38,7 +45,7 @@
             display: flex; flex-direction: column; justify-content: space-between;
         }
 
-        .hud-border { border: 1px solid var(--line); padding: 15px; background: rgba(11, 10, 7, 0.85); backdrop-filter: blur(5px); }
+        .hud-border { border: 1px solid var(--line); padding: 15px; background: rgba(11, 10, 7, 0.9); backdrop-filter: blur(5px); }
         .label { color: var(--fg-dim); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
         h1 { font-size: 13px; letter-spacing: 0.15em; margin-bottom: 5px; }
 
@@ -54,7 +61,7 @@
         #target-ui::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
         #target-ui::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
 
-        #target-hint { font-size: 10px; text-align: center; color: var(--fg); text-transform: uppercase; font-weight: bold; text-shadow: 0 0 8px #000; }
+        #target-hint { font-size: 10px; text-align: center; color: var(--fg); text-transform: uppercase; font-weight: bold; text-shadow: 0 0 10px #000; }
 
         #navigation-ui { display: none; text-align: center; margin-bottom: 30px; }
         .alert-msg { font-size: 16px; font-weight: bold; color: var(--alert); text-transform: uppercase; margin-bottom: 5px; }
@@ -62,10 +69,9 @@
 
         @keyframes pulse { 0% { opacity: 0.2; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1); } 100% { opacity: 0.2; transform: scale(0.9); } }
         
-        /* Scanlines CRT */
         #terminal-overlay::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
             background-size: 100% 4px; z-index: 61; pointer-events: none;
         }
     </style>
@@ -73,12 +79,13 @@
 <body>
 
     <video id="video-preview" autoplay playsinline></video>
+    <div id="camera-shroud"></div>
     <canvas id="qr-canvas" style="display:none;"></canvas>
     <div id="glitch-overlay"></div>
 
     <div id="terminal-overlay">
         <div class="hud-border">
-            <div class="label">ESTADO: <span id="sys-mode">SINCRONIZACIÓN NARRATIVA</span></div>
+            <div class="label">MODO: RECONSTRUCCIÓN VISUAL</div>
             <h1 id="system-status">SISTEMA INICIADO</h1>
         </div>
 
@@ -92,7 +99,7 @@
         </div>
 
         <div class="hud-border" style="font-size: 9px; color: var(--fg-dim);">
-            PROTOCOLO_VISIÓN_PERSISTENTE // REF: SURVIVOR
+            PROTOCOLO_ALTA_LUMINOSIDAD // V.08
         </div>
     </div>
 
@@ -101,6 +108,7 @@
         const canvas = document.getElementById('qr-canvas');
         const context = canvas.getContext('2d');
         const glitchOverlay = document.getElementById('glitch-overlay');
+        const cameraShroud = document.getElementById('camera-shroud');
         const targetHint = document.getElementById('target-hint');
         const navUI = document.getElementById('navigation-ui');
         const navText = document.getElementById('nav-text');
@@ -112,42 +120,12 @@
         const arrowMap = { "right": "➔", "left": "⬅", "down": "⬇", "up": "⬆", "none": "" };
 
         const STAGES = {
-            "Stage00": {
-                msg: "SALGA DEL SALÓN AHORA",
-                hint: "LOCALICE QR EN EL BALCÓN",
-                images: ["stage01-00.jpg", "stage01-01.jpg"],
-                arrow: "right"
-            },
-            "Stage01": {
-                msg: "GIRA A LA IZQUIERDA",
-                hint: "LOCALICE QR EN ESCALERAS",
-                images: ["stage01-02.jpg", "stage01-03.jpg", "stage01-04.jpg", "stage01-05.jpg", "stage01-06.jpg"],
-                arrow: "left"
-            },
-            "Stage02": {
-                msg: "SIGUE BAJANDO",
-                hint: "BUSQUE QR EN RECICLAJE (PLANTA BAJA)",
-                images: ["stage02-00.jpg", "stage02-01.jpg", "stage02-02.jpg", "stage02-03.jpg", "stage02-04.jpg"],
-                arrow: "down"
-            },
-            "Stage03": {
-                msg: "SALGA AL EXTERIOR",
-                hint: "LOCALICE QR EN POSTE DE LUZ",
-                images: ["stage03-00.jpg", "stage03-01.jpg", "stage03-02.jpg", "stage03-03.jpg"],
-                arrow: "up"
-            },
-            "Stage04": {
-                msg: "BUSCA EL REFUGIO (GIMNASIO)",
-                hint: "LOCALICE QR FINAL EN POSTE",
-                images: ["stage04-00.jpg", "stage04-01.jpg", "stage04-02.jpg", "stage03-03.jpg"],
-                arrow: "up"
-            },
-            "Refuge": {
-                msg: "REFUGIO ALCANZADO",
-                hint: "CONEXIÓN FINAL",
-                images: ["stage00-00.jpg", "stage04-02.jpg", "stage01-05.jpg", "stage02-03.jpg"],
-                isFinal: true
-            }
+            "Stage00": { msg: "SALGA DEL SALÓN AHORA", hint: "LOCALICE QR EN EL BALCÓN", images: ["stage01-00.jpg", "stage01-01.jpg"], arrow: "right" },
+            "Stage01": { msg: "GIRA A LA IZQUIERDA", hint: "LOCALICE QR EN ESCALERAS", images: ["stage01-02.jpg", "stage01-03.jpg", "stage01-04.jpg", "stage01-05.jpg", "stage01-06.jpg"], arrow: "left" },
+            "Stage02": { msg: "SIGUE BAJANDO", hint: "BUSQUE QR EN RECICLAJE (PLANTA BAJA)", images: ["stage02-00.jpg", "stage02-01.jpg", "stage02-02.jpg", "stage02-03.jpg", "stage02-04.jpg"], arrow: "down" },
+            "Stage03": { msg: "SALGA AL EXTERIOR", hint: "LOCALICE QR EN POSTE DE LUZ", images: ["stage03-00.jpg", "stage03-01.jpg", "stage03-02.jpg", "stage03-03.jpg"], arrow: "up" },
+            "Stage04": { msg: "BUSCA EL REFUGIO (GIMNASIO)", hint: "LOCALICE QR FINAL EN POSTE", images: ["stage04-00.jpg", "stage04-01.jpg", "stage04-02.jpg", "stage03-03.jpg"], arrow: "up" },
+            "Refuge": { msg: "REFUGIO ALCANZADO", hint: "CONEXIÓN FINAL", images: ["stage00-00.jpg", "stage04-02.jpg", "stage01-05.jpg", "stage02-03.jpg"], isFinal: true }
         };
 
         window.addEventListener('load', () => {
@@ -183,33 +161,36 @@
                 
                 const rand = Math.random();
 
-                if (rand > 0.92) {
-                    // FALLO DE REALIDAD: La visión desaparece y vemos la cámara pura
+                if (rand > 0.9) {
+                    // REALIDAD CRUDA
                     glitchOverlay.style.opacity = "0";
-                } else if (rand > 0.8) {
-                    // IMPACTO TOTAL: La imagen de la visión se vuelve opaca y sin tinte
+                    cameraShroud.style.opacity = "0";
+                } else if (rand > 0.7) {
+                    // MODO SOBREIMPRESIÓN TOTAL
                     glitchOverlay.style.opacity = "1";
-                    glitchOverlay.style.filter = "sepia(0) contrast(1.1) brightness(1.2)";
+                    glitchOverlay.style.mixBlendMode = "normal";
+                    glitchOverlay.style.filter = "contrast(1.2) brightness(1.1)";
+                    cameraShroud.style.opacity = "0.6";
                 } else {
-                    // MODO NORMAL: Visión persistente con tinte ámbar
-                    glitchOverlay.style.opacity = "0.88";
-                    glitchOverlay.style.filter = "sepia(0.6) contrast(1.4) brightness(1.1)";
+                    // MODO NARRATIVO REFORZADO
+                    glitchOverlay.style.opacity = "0.9";
+                    glitchOverlay.style.mixBlendMode = "hard-light";
+                    glitchOverlay.style.filter = "sepia(0.5) contrast(1.6) brightness(1.2)";
+                    cameraShroud.style.opacity = "0.4";
                 }
 
                 idx = (idx + 1) % images.length;
             };
 
             nextFrame();
-            loopInterval = setInterval(nextFrame, 400); 
+            loopInterval = setInterval(nextFrame, 420); 
         }
 
         async function processScan(config) {
             scanLock = true;
-            sysStatus.innerText = "ACCESO RECONOCIDO";
-
-            // Flash de impacto al escanear
+            sysStatus.innerText = "SEÑAL DE ALTA PRIORIDAD";
             glitchOverlay.style.opacity = "1";
-            glitchOverlay.style.filter = "invert(1) contrast(2)";
+            glitchOverlay.style.filter = "invert(1)";
             await new Promise(r => setTimeout(r, 100));
 
             if (config.isFinal) {
@@ -224,7 +205,6 @@
             targetHint.innerText = config.hint;
             navArrow.innerText = arrowMap[config.arrow] || "";
             navUI.style.display = 'block';
-
             setTimeout(() => { scanLock = false; }, 3500);
         }
     </script>

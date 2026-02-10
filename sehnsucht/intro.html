@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SEHNSUCHT — EL SISTEMA COMO TEXTO</title>
+    <style>
+        /* PALETA FÓSFORO ÁMBAR */
+        :root {
+          --bg: #0b0a07;
+          --fg: #d6a15c;
+          --fg-dim: #8a6a3e;
+          --line: #3b2a14;
+          --alert: #c45a2a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+          background: var(--bg);
+          color: var(--fg);
+          font-family: "Lucida Console", "Monaco", monospace;
+          font-size: 13px;
+          line-height: 1.4;
+          padding: 28px;
+        }
+
+        .system {
+          max-width: 920px;
+          margin: 0 auto;
+          border: 1px solid var(--line);
+          padding: 40px;
+        }
+
+        .label {
+          font-size: 11px;
+          color: var(--fg-dim);
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          margin-bottom: 10px;
+        }
+
+        h1 { font-size: 22px; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 10px; }
+        h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.15em; margin: 25px 0 10px; color: var(--fg); border-bottom: 1px solid var(--line); padding-bottom: 5px; }
+        h3 { font-size: 13px; color: var(--fg-dim); margin-bottom: 20px; }
+
+        hr { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+
+        p { margin-bottom: 12px; }
+        
+        ul { list-style: none; margin-bottom: 15px; }
+        li { margin-bottom: 4px; }
+        li::before { content: "> "; color: var(--fg-dim); }
+
+        /* DIRECTORIO DE NAVEGACIÓN */
+        .directory {
+          margin-top: 40px;
+          padding: 20px;
+          border: 1px dashed var(--line);
+          background: rgba(59, 42, 20, 0.1);
+        }
+
+        .directory h4 {
+          font-size: 12px;
+          text-transform: uppercase;
+          color: var(--alert);
+          margin-bottom: 15px;
+          letter-spacing: 0.2em;
+        }
+
+        .nav-links {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 10px;
+        }
+
+        .nav-links a {
+          color: var(--fg);
+          text-decoration: none;
+          padding: 8px;
+          border: 1px solid var(--line);
+          display: block;
+          text-align: center;
+          transition: 0.2s;
+        }
+
+        .nav-links a:hover {
+          background: var(--fg);
+          color: var(--bg);
+        }
+
+        .meta {
+          color: var(--fg-dim);
+          font-size: 11px;
+          margin-top: 30px;
+          text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+<div class="system">
+    <div class="label">ENTRY_POINT: INTRODUCCIÓN</div>
+    <h1>SEHNSUCHT</h1>
+    <h3>EL SISTEMA COMO TEXTO</h3>
+    <hr>
+
+    <p>Tradicionalmente, el análisis académico se apoya en textos escritos: libros, ensayos, manifiestos.</p>
+    <p><strong>SEHNSUCHT propone un desplazamiento: el sistema es el texto.</strong> No se lee con los ojos. Se recorre con el cuerpo.</p>
+
+    <h2>¿QUÉ SIGNIFICA "LEER" UN SISTEMA?</h2>
+    <p>Leer un sistema implica observar:</p>
+    <ul>
+        <li>Qué permite y qué limita.</li>
+        <li>Qué incentiva y qué oculta.</li>
+        <li>Cómo se expresa a través de reglas, no de frases.</li>
+    </ul>
+
+    <h2>AUTORÍA Y LECTURA</h2>
+    <p>En un texto tradicional, el autor escribe y el lector interpreta. En un sistema:</p>
+    <ul>
+        <li>El autor diseña condiciones.</li>
+        <li>El participante completa el texto con su acción.</li>
+        <li>Cada recorrido es una lectura distinta.</li>
+    </ul>
+
+    <h2>INTERPRETACIÓN</h2>
+    <p>Interpretar SEHNSUCHT no significa explicar qué quiso decir. Significa analizar cómo te posicionó, qué te pidió y qué diste por sentado.</p>
+    <p><strong>Un sistema no termina cuando se apaga. Termina cuando deja de producir pensamiento.</strong></p>
+
+    <div class="directory">
+        <h4>DIRECTORIO DE MÓDULOS</h4>
+        <div class="nav-links">
+            <a href="discusion.html" >00_DISCUSIÓN</a>
+            <a href="ejercicio1.html">01_MAPA_MEMORIA</a>
+            <a href="ejercicio2.html">02_TEXTO_CRÍTICO</a>
+            <a href="ejercicio3.html">03_COMPARATIVO</a>
+            <a href="ejercicio4.html">04_ALT_SISTEMA</a>
+            <a href="ejercicio5.html">05_SILENCIO_DOC</a>
+        </div>
+    </div>
+
+    <p class="meta">CARGA DE SISTEMA COMPLETA // OPERACIÓN_DISPONIBLE</p>
+</div>
+<div style="margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px;">
+        <a href="structure.html" style="
+            color: var(--bg); 
+            background: var(--fg); 
+            text-decoration: none; 
+            padding: 10px 20px; 
+            font-weight: bold; 
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        ">/ BACK TO INDEX</a>
+    </div>
+
+    <div class="footer">
+        SISTEMA SEHNSUCHT [REV. 2026] — SESIÓN ACTIVA
+    </div>
+</div>
+
+</body>
+</html>

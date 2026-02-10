@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TERMINAL - VISUALIZADOR DE SECUENCIAS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* -------------------------
+   PALETA FÓSFORO ÁMBAR
+-------------------------- */
+:root {
+  --bg: #0b0a07;
+  --fg: #d6a15c;
+  --fg-dim: #8a6a3e;
+  --line: #3b2a14;
+  --alert: #c45a2a;
+}
+
+/* -------------------------
+   RESET & BASE
+-------------------------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Lucida Console", "MS Gothic", monospace;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-x: hidden;
+}
+
+body { padding: 28px; }
+
+.system {
+  max-width: 920px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  padding: 24px;
+}
+
+/* -------------------------
+   TIPOGRAFÍA & ESTRUCTURA
+-------------------------- */
+.label, .meta, .footer {
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+h1 { font-size: 16px; margin-bottom: 18px; font-weight: 700; letter-spacing: 0.18em; }
+h2 { font-size: 13px; margin: 26px 0 10px; border-bottom: 1px solid var(--line); padding-bottom: 4px; font-weight: 700; text-transform: uppercase; }
+
+/* -------------------------
+   GRID DE IMÁGENES
+-------------------------- */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.image-card {
+  border: 1px solid var(--line);
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.image-card:hover { background: #1a150e; border-color: var(--fg); }
+.image-card img { width: 100%; height: auto; filter: sepia(30%); border: 1px solid var(--line); margin-bottom: 8px; display: block; }
+.image-name { font-size: 10px; color: var(--fg-dim); text-transform: uppercase; }
+
+/* -------------------------
+   MODAL INTERACTIVO
+-------------------------- */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(11, 10, 7, 0.98);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  touch-action: none;
+}
+
+#modal-content {
+  max-width: 90%;
+  max-height: 85%;
+  border: 1px solid var(--fg);
+  box-shadow: 0 0 30px rgba(214, 161, 92, 0.1);
+}
+
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 24px;
+  padding: 20px 10px;
+  cursor: pointer;
+  transition: 0.2s;
+  z-index: 1010;
+  user-select: none;
+}
+
+.nav-btn:hover { background: var(--fg); color: var(--bg); }
+#prev-btn { left: 10px; }
+#next-btn { right: 10px; }
+
+#modal-caption {
+  position: absolute;
+  bottom: 20px;
+  color: var(--fg);
+  text-transform: uppercase;
+  font-size: 11px;
+  background: var(--bg);
+  padding: 5px 15px;
+  border: 1px solid var(--line);
+}
+
+.close-hint {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: var(--fg-dim);
+  font-size: 10px;
+}
+
+/* -------------------------
+   RESPONSIVE
+-------------------------- */
+@media (max-width: 600px) {
+  body { padding: 15px; }
+  .image-grid { grid-template-columns: 1fr 1fr; }
+  .nav-btn { padding: 15px 8px; font-size: 18px; background: rgba(11, 10, 7, 0.5); }
+}
+</style>
+</head>
+
+<body>
+
+<div id="modal-overlay">
+    <span class="close-hint">[ESC] CERRAR</span>
+    <button class="nav-btn" id="prev-btn" onclick="changeImg(-1)">&#60;</button>
+    <img id="modal-content" src="" alt="PREVIEW" onclick="event.stopPropagation()">
+    <button class="nav-btn" id="next-btn" onclick="changeImg(1)">&#62;</button>
+    <div id="modal-caption"></div>
+</div>
+
+<div class="system">
+    <div class="label">UNIDAD: TERMINAL_07</div>
+    <h1>VISUALIZADOR DE SECUENCIAS: /SEQUENCE/</h1>
+    <p class="meta">ESTADO: NAVEGACIÓN HABILITADA (SWIPE/KEYS)</p>
+    <hr>
+    <div class="image-grid" id="gallery"></div>
+    <div class="footer">TERMINAL REV. B — OPERACIÓN CONTINUA — /SEQUENCE/</div>
+</div>
+<div style="margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px;">
+        <a href="structure.html" style="
+            color: var(--bg); 
+            background: var(--fg); 
+            text-decoration: none; 
+            padding: 10px 20px; 
+            font-weight: bold; 
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        ">/ BACK TO ROOT</a>
+    </div>
+
+    <div class="footer">
+        SISTEMA SEHNSUCHT [REV. 2026] — SESIÓN ACTIVA
+    </div>
+</div>
+<script>
+const directory = 'sequence';
+const files = [
+    "stage00-00.jpg", "stage01-00.jpg", "stage01-01.jpg", "stage01-02.jpg", 
+    "stage01-03.jpg", "stage01-04.jpg", "stage01-05.jpg", "stage01-06.jpg",
+    "stage02-00.jpg", "stage02-01.jpg", "stage02-02.jpg", "stage02-03.jpg", 
+    "stage02-04.jpg", "stage03-00.jpg", "stage03-01.jpg", "stage03-02.jpg",
+    "stage04-00.jpg", "stage04-01.jpg", "stage04-02.jpg", "stage04-03.jpg"
+];
+
+let currentIndex = 0;
+const gallery = document.getElementById('gallery');
+const modal = document.getElementById('modal-overlay');
+const modalImg = document.getElementById('modal-content');
+const modalCap = document.getElementById('modal-caption');
+
+// Generar Galería
+files.forEach((file, index) => {
+    const card = document.createElement('div');
+    card.className = 'image-card';
+    card.onclick = () => openModal(index);
+    card.innerHTML = `<img src="${directory}/${file}" alt="${file}"><div class="image-name">${file}</div>`;
+    gallery.appendChild(card);
+});
+
+function openModal(index) {
+    currentIndex = index;
+    updateModal();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function updateModal() {
+    const fileName = files[currentIndex];
+    modalImg.src = `${directory}/${fileName}`;
+    modalCap.innerText = `ARCHIVO [${currentIndex + 1}/20]: ${fileName}`;
+}
+
+function changeImg(step) {
+    currentIndex = (currentIndex + step + files.length) % files.length;
+    updateModal();
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Eventos de Teclado
+document.addEventListener('keydown', (e) => {
+    if (modal.style.display === 'flex') {
+        if (e.key === "ArrowLeft") changeImg(-1);
+        if (e.key === "ArrowRight") changeImg(1);
+        if (e.key === "Escape") closeModal();
+    }
+});
+
+// Cerrar al hacer clic en el fondo
+modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+
+// Soporte Swipe (Táctil)
+let touchStartX = 0;
+modal.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX);
+modal.addEventListener('touchend', e => {
+    let touchEndX = e.changedTouches[0].screenX;
+    if (touchStartX - touchEndX > 50) changeImg(1);  // Swipe Izquierda
+    if (touchEndX - touchStartX > 50) changeImg(-1); // Swipe Derecha
+});
+</script>
+
+</body>
+</html>

@@ -120,44 +120,54 @@
     </div>
 
     <div class="row" id="r1">
+        <span>10.02.26</span><span>[EDU]</span>
+        <a href="intro.html">I-CLASS (SISTEMA_COMO_TEXTO)</a>
+    </div>
+
+    <div class="row" id="r2">
+        <span>10.02.26</span><span>[SEQ]</span>
+        <a href="sequence.html">I-SEQUENCE (VISUAL_STAGES)</a>
+    </div>
+
+    <div class="row" id="r3">
         <span>09.02.26</span><span>[GAT]</span>
         <a href="index.html">I-PRELOAD (GATEWAY)</a>
     </div>
 
-    <div class="row" id="r2">
+    <div class="row" id="r4">
         <span>09.02.26</span><span>[ARV]</span>
         <a href="sehnsucht.html">I-SIGHT (RECON_VISUAL)</a>
     </div>
 
-    <div class="row" id="r3">
+    <div class="row" id="r5">
         <span>09.02.26</span><span>[NOD]</span>
         <a href="pulse.html">I-PULSE (NODO_INDIVIDUAL)</a>
     </div>
 
-    <div class="row" id="r4">
+    <div class="row" id="r6">
         <span>08.02.26</span><span>[MON]</span>
         <a href="monitor.html">I-CONSOLE (OBSERVADOR)</a>
     </div>
 
-    <div class="row" id="r5">
-        <span>08.02.26</span><span>[MSL]</span>
-        <a href="control.html">I-MASTER (GLOBAL_SYNC)</a>
+    <div class="row" id="r7">
+        <span>10.02.26</span><span>[CMD]</span>
+        <a href="control.html">I-MASTER (CONTROL_DE_SINCRONÍA)</a>
     </div>
 
-    <div class="row" id="r6">
+    <div class="row" id="r8">
         <span>08.02.26</span><span>[LOG]</span>
         <a href="log.html">I-BITÁCORA (SYSTEM_BUILD)</a>
     </div>
 
-    <div class="row" id="r7">
+    <div class="row" id="r9">
         <span>09.02.26</span><span>[REP]</span>
         <a href="report.html">I-REPORT (SESSION_ANALYTICS)</a>
     </div>
 </div>
 
 <footer id="footer-bits">
-    TERMINAL_V.08 // SEHNSUCHT_CORE_INIT <br>
-    STATUS: ARCHIVE_DECRYPTED // COLLECTIVE_NODES_ONLINE
+    TERMINAL_V.09 // SEHNSUCHT_ARCHIVE_INDEX <br>
+    STATUS: ALL_NODES_DECRYPTED // MASTER_CONTROL_ONLINE
 </footer>
 
 <script>
@@ -180,7 +190,6 @@
     }
 
     function revealRows() {
-        // Collect all children of listing that have an ID starting with 'r'
         const rows = document.querySelectorAll('.row[id^="r"]');
         rows.forEach((el, index) => {
             setTimeout(() => {

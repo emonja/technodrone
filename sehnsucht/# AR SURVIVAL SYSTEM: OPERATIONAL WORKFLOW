@@ -1,0 +1,87 @@
+# AR SURVIVAL SYSTEM: OPERATIONAL WORKFLOW
+
+## PHASE 0: SYSTEM INITIALIZATION
+- **Access:** Enter site via direct link.
+- **Camera:** Start camera system.
+- **Interface:** - Display system interface (subtle, non-static details).
+    - **Overlay FX:** Glitchy alpha-blend flicker sequence:
+        -stage00-00.jpg
+    - **Narrative Hint:** Approach whiteboard and read **Stage00 QR**.
+- **Targeting UI:** Deploy centering square for **Stage00 QR** (on the physical whiteboard).
+
+---
+
+## PHASE 1: STAGE00 ACTIVATION (CLASSROOM)
+- **Trigger:** Stage00 QR scanned.
+- **Overlay FX:** Glitchy alpha-blend flicker sequence:
+    - stage01-00.jpg
+    - stage01-01.jpg
+- **Narrative Hint:** Repetitive hint to continue mission/escape.
+- **Navigation:** - System Message: "LEAVE THE CLASSROOM."
+    - Directional UI: Arrow (Move toward exit).
+- **Targeting UI:** Deploy centering square for **Stage01 QR** (on the balcony).
+
+---
+
+## PHASE 2: STAGE01 ACTIVATION (BALCONY)
+- **Trigger:** Stage01 QR scanned.
+- **Overlay FX:** Glitchy alpha-blend flicker sequence:
+    - stage01-02.jpg
+    - stage01-03.jpg
+    - stage01-04.jpg
+    - stage01-05.jpg
+    - stage01-06.jpg
+- **Narrative Hint:** Hint to continue path to hallway.
+- **Navigation:** - System Message: "TURN LEFT AND CONTINUE."
+    - Directional UI: Arrow (Turn left).
+- **Targeting UI:** Deploy centering square for **Stage02 QR** (on the stairway handrail).
+
+---
+
+## PHASE 3: STAGE02 ACTIVATION (STAIRWELL)
+- **Trigger:** Stage02 QR scanned.
+- **Overlay FX:** Glitchy alpha-blend flicker sequence:
+    - stage02-00.jpg
+    - stage02-01.jpg
+    - stage02-02.jpg
+    - stage02-03.jpg
+    - stage02-04.jpg
+- **Narrative Hint:** Hint to continue down the stairs.
+- **Navigation:** - System Message: "SURVIVOR: KEEP CLIMBING DOWN THE STAIRS."
+    - Directional UI: Arrow (Move down).
+- **Targeting UI:** Deploy centering square for **Stage03 QR** (on top of recycle bins, main floor).
+
+---
+
+## PHASE 4: STAGE03 ACTIVATION (MAIN FLOOR)
+- **Trigger:** Stage03 QR scanned.
+- **Overlay FX:** Glitchy alpha-blend flicker sequence:
+    - stage03-00.jpg
+    - stage03-01.jpg
+    - stage03-02.jpg
+    - stage03-03.jpg
+- **Narrative Hint:** Hint to continue outside.
+- **Navigation:** - System Message: "SURVIVOR: KEEP PATH OUTDOORS."
+    - Directional UI: Arrow (Move forward).
+- **Targeting UI:** Deploy centering square for **Stage04 QR** (on the lamp post).
+
+---
+
+## PHASE 5: STAGE04 ACTIVATION (PERIMETER)
+- **Trigger:** Stage04 QR scanned.
+- **Overlay FX:** Glitchy alpha-blend flicker sequence:
+    - stage04-00.jpg
+    - stage04-01.jpg
+    - stage04-02.jpg
+    - stage03-03.jpg
+- **Narrative Hint:** Hint toward safe haven in the gym.
+- **Navigation:** - System Message: "SURVIVOR: KEEP PATH OUTDOORS."
+    - Directional UI: Arrow (Move forward).
+- **Targeting UI:** Deploy centering square for **Refuge QR** (on the lamp post).
+
+---
+
+## PHASE 6: REFUGE ACTIVATION (FINAL)
+- **Trigger:** Refuge QR scanned.
+- **System FX:** Extreme glitching and flickering for several seconds to create uncertainty.
+- **Execution:** Launch `pulse.html` (same directory).

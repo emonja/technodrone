@@ -48,7 +48,7 @@
             font-size: 11px;
         }
 
-        .dir-listing { flex-grow: 1; }
+        .dir-listing { flex-grow: 1; overflow-y: auto; }
 
         .row {
             display: grid;
@@ -120,33 +120,43 @@
     </div>
 
     <div class="row" id="r1">
-        <span>08.02.26</span><span>[PUL]</span>
-        <a href="index.html">I-PULSE (NODO_COLECTIVO)</a>
+        <span>09.02.26</span><span>[GAT]</span>
+        <a href="index.html">I-PRELOAD (GATEWAY)</a>
     </div>
 
     <div class="row" id="r2">
+        <span>09.02.26</span><span>[ARV]</span>
+        <a href="sehnsucht.html">I-SIGHT (RECON_VISUAL)</a>
+    </div>
+
+    <div class="row" id="r3">
+        <span>09.02.26</span><span>[NOD]</span>
+        <a href="pulse.html">I-PULSE (NODO_INDIVIDUAL)</a>
+    </div>
+
+    <div class="row" id="r4">
         <span>08.02.26</span><span>[MON]</span>
         <a href="monitor.html">I-CONSOLE (OBSERVADOR)</a>
     </div>
 
-    <div class="row" id="r3">
-        <span>08.02.26</span><span>[CTRL]</span>
-        <a href="control.html">I-MASTER (MANDO_SINCRONÍA)</a>
-    </div>
-
-    <div class="row" id="r4">
-        <span>08.02.26</span><span>[LOG]</span>
-        <a href="log.html">I-BITÁCORA (REGISTRO_BUILD)</a>
-    </div>
-
     <div class="row" id="r5">
-        <span>08.02.26</span><span>[REP]</span>
-        <a href="report.html">I-REPORT (SESIÓN_DATOS)</a>
+        <span>08.02.26</span><span>[MSL]</span>
+        <a href="control.html">I-MASTER (GLOBAL_SYNC)</a>
+    </div>
+
+    <div class="row" id="r6">
+        <span>08.02.26</span><span>[LOG]</span>
+        <a href="log.html">I-BITÁCORA (SYSTEM_BUILD)</a>
+    </div>
+
+    <div class="row" id="r7">
+        <span>09.02.26</span><span>[REP]</span>
+        <a href="report.html">I-REPORT (SESSION_ANALYTICS)</a>
     </div>
 </div>
 
 <footer id="footer-bits">
-    TERMINAL_V.07 // SEHNSUCHT_CORE_INIT <br>
+    TERMINAL_V.08 // SEHNSUCHT_CORE_INIT <br>
     STATUS: ARCHIVE_DECRYPTED // COLLECTIVE_NODES_ONLINE
 </footer>
 
@@ -170,11 +180,12 @@
     }
 
     function revealRows() {
-        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5'].forEach((id, index) => {
+        // Collect all children of listing that have an ID starting with 'r'
+        const rows = document.querySelectorAll('.row[id^="r"]');
+        rows.forEach((el, index) => {
             setTimeout(() => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('visible');
-            }, index * 100);
+                el.classList.add('visible');
+            }, index * 80);
         });
     }
 

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOLFEGGIO_MATRIX</title>
+
+<style>
+:root{
+    --bg:#000;
+    --grid:#111;
+    --text:#666;
+    --active:#bbb;
+    --pink:#ff3399;
+}
+
+body{
+    background:#000;
+    color:var(--text);
+    font-family:'Courier New', monospace;
+    margin:0;
+    padding:40px;
+    overflow:hidden;
+}
+
+header{
+    letter-spacing:3px;
+    font-size:11px;
+    margin-bottom:30px;
+    color:#444;
+}
+
+#grid{
+    display:grid;
+    grid-template-columns:repeat(9,40px);
+    grid-template-rows:repeat(9,40px);
+    gap:2px;
+    margin-bottom:30px;
+}
+
+.cell{
+    background:#050505;
+    border:1px solid var(--grid);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+}
+
+/* vertical sector lines */
+.cell:nth-child(3n){
+    border-right:2px solid #333;
+}
+
+/* horizontal sector lines */
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54){
+    border-bottom:2px solid #333;
+}
+
+.cell input{
+    width:100%;
+    height:100%;
+    background:transparent;
+    border:none;
+    color:#aaa;
+    text-align:center;
+    font-size:16px;
+}
+
+.cell input:focus{
+    outline:none;
+    color:#fff;
+}
+
+.invalid input{
+    color:var(--pink) !important;
+    text-shadow:0 0 6px var(--pink);
+}
+
+button{
+    background:#000;
+    border:1px solid #222;
+    color:#555;
+    padding:10px 20px;
+    margin-right:10px;
+    cursor:pointer;
+}
+
+button:hover{
+    color:#fff;
+    border-color:#444;
+}
+
+#signal{
+    margin-top:20px;
+    font-size:12px;
+    letter-spacing:2px;
+}
+
+.signal-found{
+    color:var(--pink);
+    text-shadow:0 0 8px var(--pink);
+}
+</style>
+</head>
+<body>
+
+<header>NODE://SOLFEGGIO_MATRIX</header>
+
+<div id="grid"></div>
+
+<button onclick="generateBeginner()">GENERATE</button>
+<button onclick="scanGrid()">SCAN_SIGNAL</button>
+
+<div id="signal">STATUS: WAITING_INPUT</div>
+
+<script>
+
+const grid = document.getElementById("grid");
+const signalEl = document.getElementById("signal");
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function createGrid(){
+    for(let i=0;i<81;i++){
+        let cell=document.createElement("div");
+        cell.className="cell";
+
+        let input=document.createElement("input");
+        input.maxLength=1;
+
+        input.addEventListener("input",(e)=>{
+            let val=e.target.value;
+            if(!/^[1-9]$/.test(val)) e.target.value="";
+            validateGrid();
+        });
+
+        cell.appendChild(input);
+        grid.appendChild(cell);
+    }
+}
+
+function clearGrid(){
+    document.querySelectorAll(".cell input").forEach(inp=>{
+        inp.value="";
+        inp.disabled=false;
+        inp.style.color="#aaa";
+    });
+}
+
+/* --- Beginner Puzzle Generator --- */
+
+function generateBeginner(){
+    clearGrid();
+
+    let solved = generateSolvedGrid();
+    let puzzle = removeNumbers(solved, 40); // leave ~41 clues (easy)
+
+    let inputs=document.querySelectorAll(".cell input");
+
+    puzzle.forEach((val,i)=>{
+        if(val!==0){
+            inputs[i].value=val;
+            inputs[i].disabled=true;
+            inputs[i].style.color="#444";
+        }
+    });
+
+    validateGrid();
+}
+
+/* Backtracking solver */
+
+function generateSolvedGrid(){
+    let board=new Array(81).fill(0);
+
+    function isValid(num,pos){
+        let row=Math.floor(pos/9);
+        let col=pos%9;
+
+        for(let i=0;i<9;i++){
+            if(board[row*9+i]===num) return false;
+            if(board[i*9+col]===num) return false;
+        }
+
+        let br=Math.floor(row/3)*3;
+        let bc=Math.floor(col/3)*3;
+
+        for(let r=br;r<br+3;r++){
+            for(let c=bc;c<bc+3;c++){
+                if(board[r*9+c]===num) return false;
+            }
+        }
+
+        return true;
+    }
+
+    function fill(pos=0){
+        if(pos===81) return true;
+        if(board[pos]!==0) return fill(pos+1);
+
+        let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
+
+        for(let num of nums){
+            if(isValid(num,pos)){
+                board[pos]=num;
+                if(fill(pos+1)) return true;
+                board[pos]=0;
+            }
+        }
+
+        return false;
+    }
+
+    fill();
+    return board;
+}
+
+function removeNumbers(board, amount){
+    let puzzle=[...board];
+    let positions=[...Array(81).keys()].sort(()=>Math.random()-0.5);
+
+    for(let i=0;i<amount;i++){
+        puzzle[positions[i]]=0;
+    }
+
+    return puzzle;
+}
+
+/* --- Validation --- */
+
+function validateGrid(){
+    let cells=document.querySelectorAll(".cell");
+    cells.forEach(cell=>cell.classList.remove("invalid"));
+
+    let values=[...document.querySelectorAll(".cell input")].map(i=>i.value);
+
+    for(let r=0;r<9;r++){
+        for(let c=0;c<9;c++){
+            let idx=r*9+c;
+            let val=values[idx];
+            if(!val) continue;
+
+            for(let cc=0;cc<9;cc++){
+                if(cc!==c && values[r*9+cc]===val){
+                    cells[idx].classList.add("invalid");
+                }
+            }
+
+            for(let rr=0;rr<9;rr++){
+                if(rr!==r && values[rr*9+c]===val){
+                    cells[idx].classList.add("invalid");
+                }
+            }
+
+            let br=Math.floor(r/3)*3;
+            let bc=Math.floor(c/3)*3;
+
+            for(let rr=br;rr<br+3;rr++){
+                for(let cc=bc;cc<bc+3;cc++){
+                    let boxIdx=rr*9+cc;
+                    if(boxIdx!==idx && values[boxIdx]===val){
+                        cells[idx].classList.add("invalid");
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* --- Solfeggio Scan --- */
+
+function scanGrid(){
+    let inputs=document.querySelectorAll(".cell input");
+    let rows=[];
+
+    for(let r=0;r<9;r++){
+        let row="";
+        for(let c=0;c<9;c++){
+            row+=inputs[r*9+c].value || "0";
+        }
+        rows.push(row);
+    }
+
+    const solfeggio=[396,417,528,639,741,852];
+
+    for(let r of rows){
+        for(let i=0;i<=6;i++){
+            let num=parseInt(r.substring(i,i+3));
+            if(solfeggio.includes(num)){
+                triggerSignal(num);
+                return;
+            }
+        }
+    }
+
+    signalEl.textContent="STATUS: NO_RESONANT_ALIGNMENT";
+    signalEl.classList.remove("signal-found");
+}
+
+function triggerSignal(freq){
+    signalEl.textContent="SIGNAL FOUND: "+freq+" Hz";
+    signalEl.classList.add("signal-found");
+
+    let mapped=mapToScale(freq);
+    playTone(mapped);
+}
+
+/* Minor techno mapping */
+
+function mapToScale(freq){
+    const scale=[0,2,3,5,7,8,10];
+    let degree=freq%7;
+    let base=110;
+    return base*Math.pow(2,scale[degree]/12);
+}
+
+function playTone(f){
+    let osc=audioCtx.createOscillator();
+    let gain=audioCtx.createGain();
+
+    osc.type="sawtooth";
+    osc.frequency.value=f;
+
+    gain.gain.value=0.05;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime+1.2);
+}
+
+createGrid();
+
+</script>
+</body>
+</html>

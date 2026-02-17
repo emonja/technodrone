@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NODE://SESSION</title>
+
+<style>
+:root {
+    --bg:#000;
+    --text:#444;
+    --active:#fff;
+    --pink:#ff3399;
+    --grid:#111;
+}
+
+body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Courier New',monospace;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+    text-align:center;
+    overflow:hidden;
+}
+
+header{
+    font-size:11px;
+    letter-spacing:3px;
+    margin-bottom:40px;
+    color:#666;
+}
+
+#phase-title{
+    font-size:14px;
+    margin-bottom:20px;
+    color:var(--active);
+}
+
+#instruction{
+    max-width:300px;
+    line-height:1.6;
+    margin-bottom:40px;
+}
+
+button{
+    width:80%;
+    max-width:300px;
+    padding:18px;
+    background:#000;
+    border:1px solid var(--grid);
+    color:#666;
+    font-family:inherit;
+    font-size:12px;
+    letter-spacing:2px;
+    cursor:pointer;
+}
+
+button.active{
+    border-color:var(--pink);
+    color:#fff;
+}
+
+#countdown{
+    margin-top:20px;
+    font-size:12px;
+    color:#888;
+}
+
+body::after{
+    content:"";
+    position:fixed;
+    top:0;left:0;width:100%;height:100%;
+    background:linear-gradient(rgba(0,0,0,0) 50%,rgba(0,0,0,0.2) 50%);
+    background-size:100% 4px;
+    pointer-events:none;
+}
+</style>
+</head>
+
+<body>
+
+<header>NODE://TECHNODRONE_SESSION</header>
+
+<div id="phase-title">ARRIVAL</div>
+<div id="instruction"></div>
+<button id="action-btn">ENTER</button>
+<div id="countdown"></div>
+
+<script>
+const phases = [
+{
+title:"ARRIVAL",
+text:"Stand still. Device in hand. Do not speak. Wait for internal calibration.",
+action:"READY"
+},
+{
+title:"ISOLATION",
+text:"Find your physical boundary. 1 meter minimum from others. Eyes down.",
+action:"ISOLATED"
+},
+{
+title:"INDIVIDUAL SIGNAL",
+text:"When instructed, activate your sound. Maintain steady output.",
+action:"ACTIVATE_SIGNAL"
+},
+{
+title:"COLLECTIVE SYNC",
+text:"Listen. Adjust volume slowly. Seek convergence without speaking.",
+action:"ADJUST"
+},
+{
+title:"COLLAPSE",
+text:"On cue, cut signal instantly. Absolute silence.",
+action:"CUT"
+},
+{
+title:"DEBRIEF",
+text:"Remain still. Observe internal state. Do not discuss yet.",
+action:"COMPLETE"
+}
+];
+
+let index = 0;
+let timer;
+let seconds = 0;
+
+const phaseTitle = document.getElementById("phase-title");
+const instruction = document.getElementById("instruction");
+const button = document.getElementById("action-btn");
+const countdown = document.getElementById("countdown");
+
+function renderPhase(){
+    const p = phases[index];
+    phaseTitle.innerText = p.title;
+    instruction.innerText = p.text;
+    button.innerText = p.action;
+    button.classList.remove("active");
+    countdown.innerText = "";
+}
+
+function startTimer(duration){
+    seconds = duration;
+    countdown.innerText = "TIMER: "+seconds;
+    timer = setInterval(()=>{
+        seconds--;
+        countdown.innerText = "TIMER: "+seconds;
+        if(seconds<=0){
+            clearInterval(timer);
+            nextPhase();
+        }
+    },1000);
+}
+
+function nextPhase(){
+    index++;
+    if(index >= phases.length){
+        phaseTitle.innerText="SESSION_COMPLETE";
+        instruction.innerText="Await further directive.";
+        button.style.display="none";
+        countdown.innerText="";
+        return;
+    }
+    renderPhase();
+}
+
+button.addEventListener("click",()=>{
+    button.classList.add("active");
+    startTimer(10); // default 10 seconds per phase
+});
+
+renderPhase();
+</script>
+
+</body>
+</html>

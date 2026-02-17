@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROOT://OVERSEER_CONSOLE</title>
+    <style>
+        :root { --bg: #000; --grid: #111; --text: #444; --pink: #ff3399; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; padding: 40px; font-size: 11px; }
+        .monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel { border: 1px solid var(--grid); padding: 20px; background: #050505; position: relative; }
+        h2 { font-size: 10px; color: #888; letter-spacing: 2px; border-bottom: 1px solid #111; padding-bottom: 5px; }
+        .stat-row { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #0a0a0a; }
+        .active-id { color: var(--pink); text-shadow: 0 0 5px var(--pink); }
+        .controls { margin-top: 30px; border-top: 1px solid var(--grid); padding-top: 20px; display: flex; gap: 15px; }
+        button { background: #000; border: 1px solid #333; color: #666; padding: 10px 15px; cursor: pointer; font-family: inherit; font-size: 10px; }
+        button:hover { color: #fff; border-color: #ff3399; }
+        .m-node { width: 30px; height: 30px; border: 1px solid #222; transition: 0.1s; display:flex; align-items:center; justify-content:center; font-size:8px; }
+        #broadcast-input { width: 100%; background: #000; border: 1px solid #222; color: var(--pink); padding: 10px; margin-top: 10px; outline: none; }
+    </style>
+</head>
+<body>
+
+<header style="margin-bottom:30px; letter-spacing:5px;">OVERSEER_MASTER_LINK</header>
+
+<div class="monitor-grid">
+    <div class="panel">
+        <h2>COLONY_MONITOR</h2>
+        <div id="colony-players"></div>
+        <div class="controls">
+            <button onclick="toggleGate()">GATE_LOCK/OPEN</button>
+            <button onclick="hardReset()" style="color:#500;">PURGE_COLONY</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>SHOWCASE_MIRROR (GHOST_FEED)</h2>
+        <div id="mirror-stats">IDLE</div>
+        <div style="display:grid; grid-template-columns:repeat(2, 40px); gap:10px; margin-top:15px;">
+            <div class="m-node" id="m0">01</div>
+            <div class="m-node" id="m1">02</div>
+            <div class="m-node" id="m2">03</div>
+            <div class="m-node" id="m3">04</div>
+        </div>
+    </div>
+
+    <div class="panel" style="grid-column: span 2;">
+        <h2>BROADCAST_SIGNAL</h2>
+        <input type="text" id="broadcast-input" placeholder="ENTER_DIRECTIVE_FOR_COLONY...">
+        <button onclick="sendBroadcast()" style="margin-top:10px;">EMIT_SIGNAL</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+        authDomain: "technodrone-ce06d.firebaseapp.com",
+        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+        projectId: "technodrone-ce06d",
+        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const sessionRef = ref(db, 'colony_session');
+    const mirrorRef = ref(db, 'single_player_showcase');
+
+    // --- COLONY MONITORING ---
+    onValue(sessionRef, (snap) => {
+        const d = snap.val() || {};
+        const p = d.players || {};
+        let html = "";
+        for(let i=0; i<4; i++) {
+            html += `<div class="stat-row"><span>SLOT_0${i+1}</span><span class="${p[i] ? 'active-id':''}">${p[i] || '---'}</span></div>`;
+        }
+        document.getElementById('colony-players').innerHTML = html;
+        window.gateState = d.gate_locked;
+    });
+
+    // --- SHOWCASE MONITORING ---
+    onValue(mirrorRef, (snap) => {
+        const d = snap.val() || {};
+        document.getElementById('mirror-stats').innerText = `USER: ${d.id || 'OFFLINE'} | STATUS: ${d.status || '---'}`;
+        if(d.last_tap !== undefined) {
+            const el = document.getElementById(`m${d.last_tap}`);
+            el.style.background = "#ff3399";
+            el.style.color = "#000";
+            setTimeout(() => { el.style.background = "transparent"; el.style.color = "#444"; }, 200);
+        }
+    });
+
+    // --- CONTROLS ---
+    window.toggleGate = () => update(sessionRef, { gate_locked: !window.gateState });
+    window.hardReset = () => confirm("TERMINATE COLONY?") && remove(sessionRef);
+    window.sendBroadcast = () => {
+        const val = document.getElementById('broadcast-input').value.toUpperCase();
+        if(val) update(sessionRef, { broadcast: { text: val, timestamp: Date.now() } });
+        document.getElementById('broadcast-input').value = "";
+    };
+</script>
+</body>
+</html>

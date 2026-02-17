@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT://SESSION_CONTROL</title>
+
+<style>
+:root{
+    --bg:#000;
+    --text:#444;
+    --active:#fff;
+    --warn:#ff3333;
+    --pink:#ff3399;
+    --grid:#111;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Courier New',monospace;
+    margin:0;
+    padding:30px;
+}
+
+header{
+    letter-spacing:4px;
+    margin-bottom:30px;
+    color:#666;
+}
+
+.phase-box{
+    border:1px solid var(--grid);
+    padding:20px;
+    margin-bottom:20px;
+}
+
+button{
+    background:#000;
+    border:1px solid #333;
+    color:#666;
+    padding:15px 20px;
+    font-family:inherit;
+    letter-spacing:2px;
+    cursor:pointer;
+    margin-right:10px;
+}
+
+button.active{
+    border-color:var(--pink);
+    color:#fff;
+}
+
+button.danger{
+    border-color:#441111;
+    color:#662222;
+}
+
+button.danger:hover{
+    background:#220000;
+    color:var(--warn);
+}
+
+#timer{
+    font-size:18px;
+    margin-bottom:20px;
+}
+
+.warning{
+    color:var(--warn);
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>OVERSEER://SESSION_PROTOCOL</header>
+
+<div id="timer">00:00</div>
+
+<div class="phase-box">
+    <div>CURRENT_PHASE: <span id="phase">ARRIVAL</span></div>
+    <div id="instruction"></div>
+</div>
+
+<button id="next">ADVANCE_PHASE</button>
+<button class="danger" id="stop">FORCE_COLLAPSE</button>
+
+<div class="warning" id="warning"></div>
+
+<script>
+const phases = [
+"ARRIVAL",
+"ISOLATION",
+"INDIVIDUAL_SIGNAL",
+"COLLECTIVE_SYNC",
+"COLLAPSE",
+"DEBRIEF"
+];
+
+let index=0;
+let seconds=0;
+let timerInterval;
+
+const phaseEl=document.getElementById("phase");
+const timerEl=document.getElementById("timer");
+const warning=document.getElementById("warning");
+
+function updateTimer(){
+    seconds++;
+    let m=Math.floor(seconds/60).toString().padStart(2,"0");
+    let s=(seconds%60).toString().padStart(2,"0");
+    timerEl.innerText=`${m}:${s}`;
+}
+
+timerInterval=setInterval(updateTimer,1000);
+
+document.getElementById("next").addEventListener("click",()=>{
+    if(seconds<5){
+        warning.innerText="YOU ARE RUSHING THE PHASE.";
+        return;
+    }
+    warning.innerText="";
+    index++;
+    if(index>=phases.length){
+        phaseEl.innerText="SESSION_COMPLETE";
+        return;
+    }
+    phaseEl.innerText=phases[index];
+    seconds=0;
+});
+
+document.getElementById("stop").addEventListener("click",()=>{
+    phaseEl.innerText="COLLAPSE";
+    warning.innerText="EMERGENCY COLLAPSE ACTIVATED.";
+});
+</script>
+
+</body>
+</html>

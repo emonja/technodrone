@@ -3,156 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>NODE://HE_SAID_EVOLVED</title>
+    <title>NODE://SINGLE_SHOWCASE</title>
     <style>
-        :root {
-            --bg: #000;
-            --grid: #111;
-            --text: #444;
-            --pink: #ff3399;
-            --dim-pink: #440a22;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            padding: env(safe-area-inset-top) 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%);
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        /* Navigation Style from index.html */
-        .nav-wrapper {
-            position: fixed;
-            top: calc(env(safe-area-inset-top) + 20px);
-            right: 20px;
-            z-index: 9999;
-        }
-        .nav-return {
-            text-decoration: none;
-            color: #333;
-            font-size: 11px;
-            letter-spacing: 1px;
-        }
-
-        #noise-layer {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            color: #1a1a1a;
-            font-size: 10px;
-            z-index: 1;
-        }
-
-        header {
-            letter-spacing: 3px;
-            font-size: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            z-index: 10;
-        }
-
-        #score-container {
-            font-size: 11px;
-            margin-bottom: 40px;
-            color: #888;
-            z-index: 10;
-        }
-
-        .matrix-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            display: grid;
-            grid-template-columns: repeat(2, 80px);
-            grid-template-rows: repeat(2, 80px);
-            gap: 20px;
-            z-index: 10;
-        }
-
-        .node {
-            width: 80px;
-            height: 80px;
-            background: #050505;
-            border: 1px solid var(--grid);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 9px;
-            transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-            cursor: pointer;
-            touch-action: none;
-        }
-
-        .node.active {
-            border-color: var(--pink);
-            background: var(--dim-pink);
-            box-shadow: 0 0 15px var(--pink);
-            color: #fff;
-        }
-
-        #init-btn {
-            margin-top: 60px;
-            background: transparent;
-            border: 1px solid #222;
-            color: #666;
-            padding: 10px 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            letter-spacing: 2px;
-            z-index: 100;
-            cursor: pointer;
-        }
-
-        .glitch-flash {
-            animation: flash 0.15s ease-out;
-        }
-
-        @keyframes flash {
-            0% { filter: invert(1) contrast(200%); }
-            100% { filter: invert(0) contrast(100%); }
-        }
+        :root { --bg: #000; --grid: #111; --text: #444; --pink: #ff3399; --dim-pink: #440a22; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; margin: 0; padding: env(safe-area-inset-top) 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body::after { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%); background-size: 100% 4px; pointer-events: none; z-index: 1000; }
+        #noise-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; color: #1a1a1a; font-size: 10px; z-index: 1; }
+        header { letter-spacing: 3px; font-size: 10px; margin-bottom: 20px; text-align: center; z-index: 10; }
+        #score-container { font-size: 11px; margin-bottom: 40px; color: #888; z-index: 10; }
+        .matrix-container { position: relative; width: 200px; height: 200px; display: grid; grid-template-columns: repeat(2, 80px); grid-template-rows: repeat(2, 80px); gap: 20px; z-index: 10; }
+        .node { width: 80px; height: 80px; background: #050505; border: 1px solid var(--grid); display: flex; align-items: center; justify-content: center; font-size: 9px; transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); cursor: pointer; touch-action: none; }
+        .node.active { border-color: var(--pink); background: var(--dim-pink); box-shadow: 0 0 15px var(--pink); color: #fff; }
+        #init-btn { margin-top: 60px; background: transparent; border: 1px solid #222; color: #666; padding: 10px 20px; font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 2px; z-index: 100; cursor: pointer; }
+        .glitch-flash { animation: flash 0.15s ease-out; }
+        @keyframes flash { 0% { filter: invert(1) contrast(200%); } 100% { filter: invert(0) contrast(100%); } }
     </style>
 </head>
 <body>
 
-<div class="nav-wrapper">
-    <a href="index.html" class="nav-return">back_to_root</a>
-</div>
-
 <div id="noise-layer"></div>
-
-<header>NODE://FRACTURE_SEQUENCE</header>
+<header>NODE://SINGLE_SHOWCASE_UPLINK</header>
 <div id="score-container">STABILITY_INDEX: <span id="score-val">100%</span></div>
-
 <div class="matrix-container" id="matrix">
-    <div class="node" data-idx="0">[N_01]</div>
-    <div class="node" data-idx="1">[N_02]</div>
-    <div class="node" data-idx="2">[N_03]</div>
-    <div class="node" data-idx="3">[N_04]</div>
+    <div class="node" id="node-0" data-idx="0">[N_01]</div>
+    <div class="node" id="node-1" data-idx="1">[N_02]</div>
+    <div class="node" id="node-2" data-idx="2">[N_03]</div>
+    <div class="node" id="node-3" data-idx="3">[N_04]</div>
 </div>
-
 <button id="init-btn">INIT_SYNC</button>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+        authDomain: "technodrone-ce06d.firebaseapp.com",
+        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+        projectId: "technodrone-ce06d",
+        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const mirrorRef = ref(db, 'single_player_showcase');
+
     const nodes = document.querySelectorAll('.node');
     const initBtn = document.getElementById('init-btn');
     const scoreVal = document.getElementById('score-val');
@@ -162,20 +57,17 @@
     let userIdx = 0;
     let isPlaying = false;
     let audioCtx;
-
     const freqs = [174.61, 185.00, 196.00, 207.65];
     const glitchChars = "X01_/-?><{}[]!#";
 
-    function generateNoise() {
-        let str = "";
-        for(let i=0; i<40; i++) {
-            let x = Math.random() * window.innerWidth;
-            let y = Math.random() * window.innerHeight;
-            let c = glitchChars.charAt(Math.floor(Math.random() * glitchChars.length));
-            str += `<span style="position:absolute; left:${x}px; top:${y}px">${c}</span>`;
-        }
-        noiseLayer.innerHTML = str;
-        setTimeout(() => { noiseLayer.innerHTML = ""; }, 150);
+    function uplink(extra = {}) {
+        update(mirrorRef, {
+            id: localStorage.getItem('rhizome_id') || "DEMO_USER",
+            sequence: sequence,
+            current_step: userIdx,
+            timestamp: Date.now(),
+            ...extra
+        });
     }
 
     function playNote(i) {
@@ -186,47 +78,30 @@
         osc.frequency.setValueAtTime(freqs[i], audioCtx.currentTime);
         gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
-    }
-
-    function corruptText() {
-        if (sequence.length < 5) return;
-        nodes.forEach(n => {
-            const original = n.getAttribute('data-idx');
-            const randomChar = glitchChars.charAt(Math.floor(Math.random() * glitchChars.length));
-            n.innerText = `[N_0${randomChar}]`;
-        });
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
     }
 
     function activateNode(i, isUser = false) {
         nodes[i].classList.add('active');
         playNote(i);
         setTimeout(() => nodes[i].classList.remove('active'), 250);
-        
-        if(isUser && sequence.length >= 4) {
-            applyDisplacement(nodes[i]);
-            generateNoise();
-            corruptText();
+        if(isUser) {
+            uplink({ last_tap: i });
+            if(sequence.length >= 4) {
+                const x = Math.floor(Math.random() * 60) - 30;
+                const y = Math.floor(Math.random() * 60) - 30;
+                nodes[i].style.transform = `translate(${x}px, ${y}px)`;
+                document.body.classList.add('glitch-flash');
+                setTimeout(() => document.body.classList.remove('glitch-flash'), 150);
+            }
         }
-    }
-
-    function applyDisplacement(el) {
-        const x = Math.floor(Math.random() * 80) - 40;
-        const y = Math.floor(Math.random() * 80) - 40;
-        el.style.transform = `translate(${x}px, ${y}px)`;
-        
-        document.body.classList.add('glitch-flash');
-        setTimeout(() => document.body.classList.remove('glitch-flash'), 150);
     }
 
     async function playSequence() {
         isPlaying = true;
         userIdx = 0;
         scoreVal.textContent = `${Math.max(0, 100 - (sequence.length * 5))}%`;
-
         for (const i of sequence) {
             await new Promise(r => setTimeout(r, 700));
             activateNode(i);
@@ -235,11 +110,12 @@
     }
 
     nodes.forEach((node, i) => {
-        node.addEventListener('pointerdown', (e) => {
+        node.addEventListener('pointerdown', () => {
             if(isPlaying || sequence.length === 0) return;
             activateNode(i, true);
             if(i !== sequence[userIdx]) {
-                scoreVal.textContent = "CRITICAL_FAILURE";
+                scoreVal.textContent = "FAILURE";
+                uplink({ status: "FAILED" });
                 sequence = [];
                 initBtn.style.display = "block";
                 return;
@@ -249,22 +125,19 @@
                 setTimeout(() => {
                     sequence.push(Math.floor(Math.random() * 4));
                     playSequence();
+                    uplink({ status: "PROGRESSING" });
                 }, 1000);
             }
         });
     });
 
     initBtn.addEventListener('click', () => {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        nodes.forEach((n, i) => {
-            n.style.transform = 'translate(0, 0)';
-            n.innerText = `[N_0${i+1}]`;
-        });
+        nodes.forEach(n => n.style.transform = 'translate(0,0)');
         sequence = [Math.floor(Math.random() * 4)];
         initBtn.style.display = "none";
+        uplink({ status: "STARTED" });
         playSequence();
     });
 </script>
-
 </body>
 </html>

@@ -3,26 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>NODE://SINGLE_SHOWCASE</title>
+    <title>NODE://SINGLE_SHOWCASE_DAYLIGHT</title>
     <style>
-        :root { --bg: #000; --grid: #111; --text: #444; --pink: #ff3399; --dim-pink: #440a22; }
-        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; margin: 0; padding: env(safe-area-inset-top) 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; }
-        body::after { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%); background-size: 100% 4px; pointer-events: none; z-index: 1000; }
-        #noise-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; color: #1a1a1a; font-size: 10px; z-index: 1; }
-        header { letter-spacing: 3px; font-size: 10px; margin-bottom: 20px; text-align: center; z-index: 10; }
-        #score-container { font-size: 11px; margin-bottom: 40px; color: #888; z-index: 10; }
-        .matrix-container { position: relative; width: 200px; height: 200px; display: grid; grid-template-columns: repeat(2, 80px); grid-template-rows: repeat(2, 80px); gap: 20px; z-index: 10; }
-        .node { width: 80px; height: 80px; background: #050505; border: 1px solid var(--grid); display: flex; align-items: center; justify-content: center; font-size: 9px; transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); cursor: pointer; touch-action: none; }
-        .node.active { border-color: var(--pink); background: var(--dim-pink); box-shadow: 0 0 15px var(--pink); color: #fff; }
-        #init-btn { margin-top: 60px; background: transparent; border: 1px solid #222; color: #666; padding: 10px 20px; font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 2px; z-index: 100; cursor: pointer; }
+        /* High Contrast Daylight Palette */
+        :root { 
+            --bg: #ffffff; 
+            --grid: #dddddd; 
+            --text: #000000; 
+            --active-node: #0066ff; /* Deep blue projects better on white than pink */
+            --dim-active: #e6f0ff;
+        }
+
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: env(safe-area-inset-top) 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+        }
+
+        /* Subtle scanlines for daylight - reduced opacity to keep it clean */
+        body::after { 
+            content: ""; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.03) 50%); 
+            background-size: 100% 4px; 
+            pointer-events: none; 
+            z-index: 1000; 
+        }
+
+        header { 
+            letter-spacing: 3px; 
+            font-size: 12px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            z-index: 10; 
+            font-weight: bold;
+        }
+
+        #score-container { 
+            font-size: 12px; 
+            margin-bottom: 40px; 
+            color: #555; 
+            z-index: 10; 
+            font-weight: bold;
+        }
+
+        .matrix-container { 
+            position: relative; 
+            width: 200px; 
+            height: 200px; 
+            display: grid; 
+            grid-template-columns: repeat(2, 80px); 
+            grid-template-rows: repeat(2, 80px); 
+            gap: 20px; 
+            z-index: 10; 
+        }
+
+        .node { 
+            width: 80px; 
+            height: 80px; 
+            background: #fafafa; 
+            border: 2px solid #000; /* Thicker borders for projection */
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            font-weight: bold;
+            transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); 
+            cursor: pointer; 
+            touch-action: none; 
+        }
+
+        .node.active { 
+            border-color: var(--active-node); 
+            background: var(--dim-active); 
+            box-shadow: 0 0 20px rgba(0, 102, 255, 0.3); 
+            color: var(--active-node); 
+        }
+
+        #init-btn { 
+            margin-top: 60px; 
+            background: #000; 
+            border: 1px solid #000; 
+            color: #fff; 
+            padding: 12px 24px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 12px; 
+            letter-spacing: 2px; 
+            z-index: 100; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
+
+        #init-btn:hover {
+            background: #333;
+        }
+
+        /* Glitch flash for white background needs to be a dark burst */
         .glitch-flash { animation: flash 0.15s ease-out; }
-        @keyframes flash { 0% { filter: invert(1) contrast(200%); } 100% { filter: invert(0) contrast(100%); } }
+        @keyframes flash { 0% { background-color: #000; } 100% { background-color: #fff; } }
     </style>
 </head>
 <body>
 
-<div id="noise-layer"></div>
-<header>NODE://SINGLE_SHOWCASE_UPLINK</header>
+<header>NODE://DAYLIGHT_UPLINK_v2</header>
 <div id="score-container">STABILITY_INDEX: <span id="score-val">100%</span></div>
 <div class="matrix-container" id="matrix">
     <div class="node" id="node-0" data-idx="0">[N_01]</div>
@@ -51,14 +145,12 @@
     const nodes = document.querySelectorAll('.node');
     const initBtn = document.getElementById('init-btn');
     const scoreVal = document.getElementById('score-val');
-    const noiseLayer = document.getElementById('noise-layer');
     
     let sequence = [];
     let userIdx = 0;
     let isPlaying = false;
     let audioCtx;
     const freqs = [174.61, 185.00, 196.00, 207.65];
-    const glitchChars = "X01_/-?><{}[]!#";
 
     function uplink(extra = {}) {
         update(mirrorRef, {

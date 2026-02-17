@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROOT://COLONY_CONSOLE</title>
+    <style>
+        :root { --bg: #000; --grid: #111; --text: #444; --pink: #ff3399; --warn: #ffcc00; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; padding: 40px; margin: 0; font-size: 12px; }
+        header { letter-spacing: 5px; color: #666; margin-bottom: 30px; border-bottom: 1px solid var(--grid); padding-bottom: 10px; }
+        
+        .monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .panel { border: 1px solid var(--grid); padding: 20px; background: #050505; }
+        .panel h2 { font-size: 10px; color: #888; margin-top: 0; text-transform: uppercase; letter-spacing: 2px; }
+
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #111; padding-bottom: 5px; }
+        .value { color: #aaa; }
+        .active-id { color: var(--pink); text-shadow: 0 0 5px var(--pink); }
+
+        .controls { margin-top: 40px; display: flex; gap: 20px; }
+        button { background: #000; border: 1px solid #333; color: #555; padding: 15px 25px; cursor: pointer; font-family: 'Courier New'; letter-spacing: 2px; transition: 0.3s; }
+        button:hover { color: #fff; border-color: #666; }
+        button.danger { border-color: #441111; color: #662222; }
+        button.danger:hover { background: #220000; color: #ff3333; border-color: #ff3333; }
+        
+        #deployment-status { font-weight: bold; }
+        .locked { color: #ff3333; }
+        .open { color: #00ff88; }
+
+        pre { color: #00ff88; font-size: 10px; overflow: auto; max-height: 200px; }
+    </style>
+</head>
+<body>
+
+<header>OVERSEER_CONSOLE // COLONY_MONITOR_v1.0</header>
+
+<div class="monitor-grid">
+    <div class="panel">
+        <h2>COLONY_LOGINS</h2>
+        <div id="player-list">
+            </div>
+    </div>
+
+    <div class="panel">
+        <h2>CORE_SEQUENCE_ARRAY</h2>
+        <pre id="raw-sequence">WAITING_FOR_DATA...</pre>
+        <div class="stat-row" style="margin-top:20px;">
+            <span>STABILITY_INDEX:</span>
+            <span class="value" id="stability">--%</span>
+        </div>
+        <div class="stat-row">
+            <span>DEPLOYMENT_GATE:</span>
+            <span id="deployment-status" class="locked">LOCKED</span>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>BROADCAST_SIGNAL</h2>
+    <input type="text" id="broadcast-msg" placeholder="ENTER_DIRECTIVE..." 
+           style="width:70%; background:#000; border:1px solid #333; color:var(--pink); padding:10px; font-family:inherit;">
+    <button onclick="sendBroadcast()" style="padding:10px;">SEND</button>
+    <div id="last-sent" style="margin-top:10px; font-size:9px; color:#333;">LAST: NONE</div>
+</div>
+<div class="controls">
+    <button id="toggle-deploy" onclick="toggleGate()">TOGGLE_GATE: LOCK/OPEN</button>
+    <button class="danger" onclick="hardReset()">PURGE_COLONY_AND_RESET</button>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+        authDomain: "technodrone-ce06d.firebaseapp.com",
+        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+        projectId: "technodrone-ce06d",
+        storageBucket: "technodrone-ce06d.firebasestorage.app",
+        messagingSenderId: "869296657162",
+        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const sessionRef = ref(db, 'colony_session');
+
+    let isLocked = true;
+
+    // --- Monitoring ---
+    onValue(sessionRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        const players = data.players || {};
+        
+        // Render Player List
+        let pHTML = "";
+        for(let i=0; i<4; i++) {
+            const id = players[i] || "---";
+            const time = data.last_input && data.last_input.slot == i ? new Date(data.last_input.timestamp).toLocaleTimeString() : "IDLE";
+            pHTML += `<div class="stat-row">
+                        <span>SLOT_0${i+1}</span>
+                        <span class="${id !== '---' ? 'active-id' : ''}">${id}</span>
+                        <span class="value" style="font-size:9px;">${time}</span>
+                      </div>`;
+        }
+        document.getElementById('player-list').innerHTML = pHTML;
+
+        // Render Sequence
+        document.getElementById('raw-sequence').innerText = JSON.stringify(data.sequence || [], null, 2);
+        
+        // Stability
+        if(data.sequence) {
+            const stab = Math.max(0, 100 - (data.sequence.length * 5));
+            document.getElementById('stability').innerText = stab + "%";
+        }
+
+        // Gate Status
+        isLocked = data.gate_locked !== false; // Default to locked if undefined
+        const gateEl = document.getElementById('deployment-status');
+        gateEl.innerText = isLocked ? "LOCKED" : "OPEN_FOR_SYNC";
+        gateEl.className = isLocked ? "locked" : "open";
+    });
+    window.sendBroadcast = function() {
+        const msg = document.getElementById('broadcast-msg').value.toUpperCase();
+        if(!msg) return;
+        update(sessionRef, { 
+            broadcast: {
+                text: msg,
+                timestamp: Date.now()
+            }
+        });
+        document.getElementById('last-sent').innerText = `LAST: ${msg}`;
+        document.getElementById('broadcast-msg').value = "";
+    };
+
+    // --- Master Controls ---
+    window.toggleGate = function() {
+        update(sessionRef, { gate_locked: !isLocked });
+    };
+
+    window.hardReset = function() {
+        if(confirm("CRITICAL: THIS WILL TERMINATE ALL ACTIVE SESSIONS. PROCEED?")) {
+            remove(sessionRef).then(() => {
+                alert("RHIZOME_PURGED. READY FOR NEW COLONY.");
+            });
+        }
+    };
+</script>
+
+</body>
+</html>

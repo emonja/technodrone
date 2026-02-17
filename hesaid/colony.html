@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NODE://COLONY_EVOLVED</title>
+    <style>
+        :root { --bg: #000; --grid: #111; --text: #444; --pink: #ff3399; --dim-pink: #440a22; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body::after { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%); background-size: 100% 4px; pointer-events: none; z-index: 1000; }
+        #status-bar { font-size: 10px; letter-spacing: 2px; margin-bottom: 30px; color: var(--pink); text-shadow: 0 0 5px var(--pink); text-align: center;}
+        .matrix-container { display: grid; grid-template-columns: repeat(2, 90px); grid-template-rows: repeat(2, 90px); gap: 20px; z-index: 10; }
+        .node { width: 90px; height: 90px; background: #050505; border: 1px solid var(--grid); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); cursor: pointer; opacity: 0.1; }
+        .node.assigned { opacity: 1; border-color: #333; }
+        .node.cpu { opacity: 0.5; border-color: #222; border-style: dashed; }
+        .node.active { border-color: var(--pink); background: var(--dim-pink); box-shadow: 0 0 15px var(--pink); color: #fff; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; letter-spacing: 2px; }
+        #timer { font-size: 32px; color: var(--pink); margin-top: 20px; }
+        .glitch-flash { animation: flash 0.15s ease-out; }
+        @keyframes flash { 0% { filter: invert(1) contrast(200%); } 100% { filter: invert(0) contrast(100%); } }
+        .broadcast-alert { position:fixed; top:20%; width:100%; background:var(--pink); color:#000; text-align:center; font-weight:bold; padding:20px; z-index:5000; letter-spacing:5px; box-shadow: 0 0 50px var(--pink); }
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay" class="overlay">
+    <div id="load-msg">CONNECTING_TO_RHIZOME...</div>
+    <div id="player-count">[0/4]</div>
+    <div id="timer"></div>
+</div>
+
+<div id="status-bar">STATUS: SCANNING_COLONY</div>
+<div class="matrix-container" id="matrix">
+    <div class="node" id="node-0" data-idx="0">[N_01]</div>
+    <div class="node" id="node-1" data-idx="1">[N_02]</div>
+    <div class="node" id="node-2" data-idx="2">[N_03]</div>
+    <div class="node" id="node-3" data-idx="3">[N_04]</div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, onDisconnect, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+        authDomain: "technodrone-ce06d.firebaseapp.com",
+        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+        projectId: "technodrone-ce06d",
+        storageBucket: "technodrone-ce06d.firebasestorage.app",
+        messagingSenderId: "869296657162",
+        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const sessionRef = ref(db, 'colony_session');
+    const playerId = localStorage.getItem('rhizome_id') || "UNKNOWN";
+
+    const nodes = document.querySelectorAll('.node');
+    const statusText = document.getElementById('status-bar');
+    const overlay = document.getElementById('loading-overlay');
+    const countDisplay = document.getElementById('player-count');
+    const timerDisplay = document.getElementById('timer');
+
+    let mySlot = null;
+    let audioCtx;
+    let isPlayingSeq = false;
+    let lastProcessedTime = 0;
+    let lastBroadcastTime = 0;
+    const freqs = [174.61, 185.00, 196.00, 207.65];
+
+    function playNote(i) {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freqs[i], audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function applyGlitch(idx) {
+        document.body.classList.add('glitch-flash');
+        setTimeout(() => document.body.classList.remove('glitch-flash'), 150);
+        const x = Math.floor(Math.random() * 40) - 20;
+        const y = Math.floor(Math.random() * 40) - 20;
+        nodes[idx].style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    async function joinSession() {
+        const snap = await get(sessionRef);
+        const data = snap.val() || {};
+        const players = data.players || {};
+
+        if (data.gate_locked || Object.keys(players).length >= 4) {
+            document.getElementById('load-msg').innerText = "GATE_LOCKED // ACCESS_DENIED";
+            return;
+        }
+
+        for (let i = 0; i < 4; i++) { if (!players[i]) { mySlot = i; break; } }
+        const myRef = ref(db, `colony_session/players/${mySlot}`);
+        set(myRef, playerId);
+        onDisconnect(myRef).remove();
+
+        statusText.innerText = `ID: ${playerId} // SLOT: 0${mySlot + 1}`;
+        nodes[mySlot].classList.add('assigned');
+        nodes[mySlot].innerHTML += `<br>(YOU)`;
+    }
+
+    onValue(sessionRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        const players = data.players || {};
+        const count = Object.keys(players).length;
+        countDisplay.innerText = `CAPSULE: [${count}/4]`;
+
+        nodes.forEach((n, i) => {
+            if (!players[i]) n.classList.add('cpu');
+            else n.classList.remove('cpu');
+        });
+
+        if (count === 1 && data.status === 'active') {
+            statusText.innerText = "COLONY_SUPERVISOR_AUTHORIZED // PURGING";
+            setTimeout(() => { if(mySlot !== null) remove(sessionRef); window.location.reload(); }, 5000);
+        }
+
+        if (count === 4 && data.status !== 'active' && data.status !== 'countdown') {
+            update(sessionRef, { status: 'countdown' });
+            startCountdown();
+        }
+
+        if (data.broadcast && data.broadcast.timestamp > lastBroadcastTime) {
+            lastBroadcastTime = data.broadcast.timestamp;
+            showBroadcast(data.broadcast.text);
+        }
+
+        if (data.status === 'active' && data.playing_sequence && !isPlayingSeq) {
+            playColonySequence(data.sequence);
+        }
+
+        if (data.last_input && data.last_input.timestamp > lastProcessedTime) {
+            lastProcessedTime = data.last_input.timestamp;
+            flashNode(data.last_input.val);
+            if (data.sequence && data.sequence.length >= 4) applyGlitch(data.last_input.val);
+            handleSequenceLogic(data, players);
+        }
+    });
+
+    function showBroadcast(text) {
+        const bDiv = document.createElement('div');
+        bDiv.className = 'broadcast-alert';
+        bDiv.innerText = `OVERSEER_MESSAGE: ${text}`;
+        document.body.appendChild(bDiv);
+        setTimeout(() => { bDiv.remove(); applyGlitch(0); }, 3000);
+    }
+
+    async function playColonySequence(seq) {
+        isPlayingSeq = true;
+        for (const idx of seq) {
+            await new Promise(r => setTimeout(r, 800));
+            flashNode(idx);
+        }
+        isPlayingSeq = false;
+        if (mySlot === 0) update(sessionRef, { playing_sequence: false });
+    }
+
+    function flashNode(i) {
+        const el = document.getElementById(`node-${i}`);
+        if(el) {
+            el.classList.add('active');
+            playNote(i);
+            setTimeout(() => el.classList.remove('active'), 250);
+        }
+    }
+
+    async function handleSequenceLogic(data, players) {
+        const expected = data.sequence[data.user_step];
+        if (!players[expected] && mySlot === 0 && !isPlayingSeq) {
+            setTimeout(() => {
+                update(sessionRef, { last_input: { val: expected, timestamp: Date.now(), slot: expected } });
+            }, 1000);
+        }
+
+        if (mySlot !== 0) return;
+        if (data.last_input.val === expected) {
+            if (data.user_step + 1 === data.sequence.length) {
+                const nextSeq = [...data.sequence, Math.floor(Math.random() * 4)];
+                setTimeout(() => update(sessionRef, { sequence: nextSeq, user_step: 0, playing_sequence: true }), 1200);
+            } else {
+                update(sessionRef, { user_step: data.user_step + 1 });
+            }
+        } else {
+            const culprit = data.last_input.slot;
+            if (culprit !== undefined) remove(ref(db, `colony_session/players/${culprit}`));
+            update(sessionRef, { user_step: 0, playing_sequence: true });
+        }
+    }
+
+    function startCountdown() {
+        let count = 10;
+        const interval = setInterval(() => {
+            timerDisplay.innerText = count;
+            count--;
+            if (count < 0) {
+                clearInterval(interval);
+                overlay.style.display = 'none';
+                if (mySlot === 0) resetGame();
+            }
+        }, 1000);
+    }
+
+    function resetGame() {
+        update(sessionRef, {
+            status: 'active',
+            sequence: [Math.floor(Math.random() * 4)],
+            user_step: 0,
+            playing_sequence: true,
+            last_input: null
+        });
+    }
+
+    nodes.forEach((node, i) => {
+        node.addEventListener('pointerdown', () => {
+            if (mySlot !== i || isPlayingSeq) return;
+            update(sessionRef, { last_input: { val: i, timestamp: Date.now(), slot: i } });
+        });
+    });
+
+    joinSession();
+</script>
+</body>
+</html>

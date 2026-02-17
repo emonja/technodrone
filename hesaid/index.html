@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NODE://LOADING_DOCK</title>
+    <style>
+        body { background: #000; color: #444; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .input-box { border: 1px solid #222; background: #050505; color: #ff3399; padding: 15px; text-align: center; font-size: 18px; letter-spacing: 2px; outline: none; margin-bottom: 20px; }
+        .btn-group { display: flex; gap: 20px; }
+        button { background: transparent; border: 1px solid #333; color: #666; padding: 10px 20px; cursor: pointer; font-family: 'Courier New'; }
+        button:hover { color: #fff; border-color: #ff3399; }
+        .error { color: #ff3399; font-size: 10px; margin-top: 10px; visibility: hidden; }
+    </style>
+</head>
+<body>
+    <header style="margin-bottom: 40px; letter-spacing: 4px;">IDENTITY_REQUIRED</header>
+    <input type="text" id="player-id" class="input-box" placeholder="A00000000" maxlength="9">
+    <div class="btn-group">
+        <button onclick="launch('single')">SINGLE_USER</button>
+        <button onclick="launch('colony')">COLONY_MODE</button>
+    </div>
+    <div id="err" class="error">INVALID_ID: MUST START WITH A/L FOLLOWED BY 8 DIGITS</div>
+
+    <script>
+        function launch(mode) {
+            const id = document.getElementById('player-id').value.toUpperCase();
+            const regex = /^[AL][0-9]{8}$/;
+            
+            if (!regex.test(id)) {
+                document.getElementById('err').style.visibility = "visible";
+                return;
+            }
+
+            localStorage.setItem('rhizome_id', id);
+            window.location.href = mode === 'single' ? 'individual.html' : 'colony.html';
+        }
+    </script>
+</body>
+</html>

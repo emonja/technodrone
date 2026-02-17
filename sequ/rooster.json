@@ -1,0 +1,96 @@
+{
+  "colony_session": {
+    "players": [
+      "L03021622"
+    ]
+  },
+  "single_player_showcase": {
+    "current_step": 0,
+    "id": "L03021622",
+    "last_tap": 3,
+    "sequence": [
+      1,
+      1,
+      3,
+      0
+    ],
+    "status": "PROGRESSING",
+    "timestamp": 1771339789324
+  },
+  "techno_sequencer": {
+    "roster": {
+      "A00232392": {
+        "name": "Acosta Limón, Luis Ángel",
+        "active": true
+      },
+      "A00572999": {
+        "name": "Aguirre León, María Fernanda",
+        "active": true
+      },
+      "A01643306": {
+        "name": "Carrillo Rosa Lopes, Gabriel Alejandro",
+        "active": true
+      },
+      "A01648756": {
+        "name": "Casillas Gil, Diego Santiago",
+        "active": true
+      },
+      "A01648739": {
+        "name": "García Romero, Michelle",
+        "active": true
+      },
+      "A01649094": {
+        "name": "Kelly Soberanes, Mateo",
+        "active": true
+      },
+      "A01541196": {
+        "name": "Macías Duarte, Claudio Rafael",
+        "active": true
+      },
+      "A01647800": {
+        "name": "Moreno Martínez, Regina",
+        "active": true
+      },
+      "A01643608": {
+        "name": "Negrete Gutiérrez, Carlos Gabriel",
+        "active": true
+      },
+      "A01645960": {
+        "name": "Núñez Martínez, Melanie",
+        "active": true
+      },
+      "A01643433": {
+        "name": "Orozco Haro, María José",
+        "active": true
+      },
+      "A01644065": {
+        "name": "Peña Zavala, Camila Giselle",
+        "active": true
+      },
+      "A01649340": {
+        "name": "Rodriguez Ambrocio, Aixa Dajani",
+        "active": true
+      },
+      "A00841933": {
+        "name": "Salazar Osuna, Marco Antonio",
+        "active": true
+      },
+      "A01277671": {
+        "name": "Vilchis Montalvo, Victoria Naomi",
+        "active": true
+      },
+      "A01649350": {
+        "name": "Villegas Torres, Maiara Daniela",
+        "active": true
+      },
+      "L666": {
+        "name": "Usuario de prueba",
+        "active": true
+      }
+    },
+    "grid": {},
+    "users": {},
+    "playing": false,
+    "bpm": 120
+  }
+}

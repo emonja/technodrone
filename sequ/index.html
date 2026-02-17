@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODE://SEQUENCER</title>
+
+<style>
+body{
+    background:#000;
+    color:#444;
+    font-family:'Courier New',monospace;
+    text-align:center;
+    margin:0;
+    padding:40px 20px;
+}
+
+h3{color:#777;letter-spacing:2px}
+
+input,button{
+    background:#000;
+    border:1px solid #222;
+    color:#666;
+    padding:15px;
+    font-family:inherit;
+    letter-spacing:2px;
+}
+
+button:hover{border-color:#555;color:#fff}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    gap:8px;
+    margin-top:30px;
+}
+
+.cell{
+    border:1px solid #111;
+    padding:20px 0;
+    cursor:pointer;
+    transition:0.1s;
+}
+
+.cell.on{
+    background:#ff3399;
+    color:#000;
+}
+
+.cell.playhead{
+    border-color:#fff;
+}
+
+#noteLabel{margin-top:20px;color:#888}
+</style>
+</head>
+
+<body>
+
+<h3>TECHNODRONE://SEQUENCER_NODE</h3>
+
+<div id="login">
+    <input id="userid" placeholder="ENTER_ID">
+    <button onclick="login()">ACCESS</button>
+</div>
+
+<div id="sequencer" style="display:none;">
+    <div id="noteLabel"></div>
+    <div class="grid" id="grid"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, get, set, onValue } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+authDomain:"technodrone-ce06d.firebaseapp.com",
+databaseURL:"https://technodrone-ce06d-default-rtdb.firebaseio.com",
+projectId:"technodrone-ce06d"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+const NOTES=[
+130.81,146.83,164.81,
+261.63,293.66,329.63,
+523.25,587.33,659.25
+];
+
+let userId;
+let assignedNoteIndex;
+let audioCtx;
+let step=0;
+let clockInterval=null;
+
+window.login=async function(){
+    userId=document.getElementById("userid").value.trim();
+    if(!userId) return;
+
+    const rosterSnap=await get(ref(db,"techno_sequencer/roster/"+userId));
+
+    if(!rosterSnap.exists() || !rosterSnap.val().active){
+        document.body.innerHTML="<h2>ACCESS_DENIED</h2>";
+        return;
+    }
+
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended") await audioCtx.resume();
+
+    const userSnap=await get(ref(db,"techno_sequencer/users/"+userId));
+
+    if(userSnap.exists()){
+        assignedNoteIndex=userSnap.val().note;
+    }else{
+        assignedNoteIndex=Math.floor(Math.random()*NOTES.length);
+        await set(ref(db,"techno_sequencer/users/"+userId),{
+            note:assignedNoteIndex
+        });
+    }
+
+    initSequencer();
+};
+
+function initSequencer(){
+    document.getElementById("login").style.display="none";
+    document.getElementById("sequencer").style.display="block";
+
+    document.getElementById("noteLabel").innerText=
+        "ASSIGNED_NOTE: "+NOTES[assignedNoteIndex]+" Hz";
+
+    const gridEl=document.getElementById("grid");
+    gridEl.innerHTML="";
+
+    for(let i=0;i<8;i++){
+        const div=document.createElement("div");
+        div.className="cell";
+        div.dataset.step=i;
+        div.onclick=()=>toggleStep(i);
+        gridEl.appendChild(div);
+    }
+
+    listenRow();
+    listenPlayState();
+}
+
+function toggleStep(stepIndex){
+    const cellRef=ref(db,
+        `techno_sequencer/grid/${assignedNoteIndex}/${stepIndex}`
+    );
+
+    get(cellRef).then(snap=>{
+        set(cellRef,!snap.val());
+    });
+}
+
+function listenRow(){
+    onValue(ref(db,"techno_sequencer/grid/"+assignedNoteIndex),snap=>{
+        const row=snap.val()||{};
+        document.querySelectorAll(".cell").forEach(c=>{
+            const s=c.dataset.step;
+            c.classList.toggle("on",row[s]===true);
+        });
+    });
+}
+
+function listenPlayState(){
+    onValue(ref(db,"techno_sequencer/playing"),async snap=>{
+        const playing=snap.val();
+
+        if(playing && !clockInterval){
+            const bpmSnap=await get(ref(db,"techno_sequencer/bpm"));
+            const bpm=bpmSnap.val()||120;
+            const interval=(60000/bpm)/2;
+
+            clockInterval=setInterval(async ()=>{
+                updatePlayhead();
+                const activeSnap=await get(
+                    ref(db,`techno_sequencer/grid/${assignedNoteIndex}/${step}`)
+                );
+                if(activeSnap.val()) play(NOTES[assignedNoteIndex]);
+                step=(step+1)%8;
+            },interval);
+        }
+
+        if(!playing && clockInterval){
+            clearInterval(clockInterval);
+            clockInterval=null;
+            clearPlayhead();
+        }
+    });
+}
+
+function updatePlayhead(){
+    document.querySelectorAll(".cell").forEach(c=>{
+        c.classList.remove("playhead");
+    });
+    document.querySelectorAll(".cell")[step]
+        .classList.add("playhead");
+}
+
+function clearPlayhead(){
+    document.querySelectorAll(".cell").forEach(c=>{
+        c.classList.remove("playhead");
+    });
+}
+
+function play(freq){
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type="square";
+    osc.frequency.value=freq;
+    gain.gain.value=0.2;
+    gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.1);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime+0.1);
+}
+</script>
+
+</body>
+</html>

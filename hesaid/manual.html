@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANUAL://TECHNODRONE</title>
+    <style>
+        :root { --bg: #000; --text: #666; --pink: #ff3399; --grid: #111; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; padding: 40px; line-height: 1.6; }
+        header { border-bottom: 1px solid var(--grid); padding-bottom: 20px; margin-bottom: 40px; letter-spacing: 3px; color: #fff; }
+        h2 { color: var(--pink); font-size: 14px; letter-spacing: 2px; margin-top: 40px; text-transform: uppercase; }
+        .code-block { background: #050505; border: 1px solid var(--grid); padding: 20px; color: #aaa; font-size: 11px; overflow-x: auto; margin: 20px 0; }
+        .mechanic-card { border-left: 2px solid var(--pink); padding-left: 20px; margin: 20px 0; }
+        b { color: #eee; }
+        .status-tag { background: #111; padding: 2px 8px; font-size: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<header>SYSTEM_DOCUMENTATION // ARCHIVE_0X2026</header>
+
+<div class="mechanic-card">
+    [cite_start]<b>PROJECT_ID:</b> technodrone-ce06d [cite: 2] <br>
+    <b>CORE_STATUS:</b> MULTI_NODE_ACTIVE <br>
+    <b>DESCRIPTION:</b> A distributed mnemonic synchronization game (Simon Says) designed for mobile-first rhizomatic networks.
+</div>
+
+<h2>01. CORE_MECHANICS</h2>
+<ul>
+    <li><b>Mnemonic Sequence:</b> The system generates a random index ($0-3$) and appends it to a global array.</li>
+    <li><b>Spatial Entropy:</b> After stability reaches <span class="status-tag">LEVEL_04</span>, each correct input triggers a random 2D displacement ($X, Y$) to the interface nodes.</li>
+    <li><b>Signal Integrity:</b> Uses Square-wave oscillators ($174\text{Hz}$ - $207\text{Hz}$) to ensure audio reproduction on restricted mobile hardware.</li>
+</ul>
+
+<h2>02. FIREBASE_REALTIME_DB_STRUCTURE</h2>
+[cite_start]<p>The system operates schemaless, creating the following node structure in the <b>technodrone-ce06d-default-rtdb</b>[cite: 2].</p>
+<div class="code-block">
+colony_session: {
+  status: "active" | "countdown",
+  gate_locked: boolean,    // Overseer Control
+  sequence: [0, 2, 1...],  // The Shared Pulse
+  user_step: 0,            // Current required index
+  players: {               // Max 4 slots
+    0: "A00000000",
+    1: "L88888888"
+  },
+  last_input: { val: 0, timestamp: 1739798400, slot: 0 },
+  broadcast: { text: "PURGE", timestamp: 1739798500 }
+}
+</div>
+
+<h2>03. COLONY_PROTOCOL (MULTIPLAYER)</h2>
+<p><b>Handshake:</b> Users must provide an identity starting with <b>A</b> or <b>L</b> followed by 8 digits.</p>
+<p><b>The Capsule:</b> When 4 players are registered, Slot 0 (the leader) triggers a 10-second sync timer. Once active, each player can <i>only</i> interact with their assigned node.</p>
+<p><b>Cannibalization:</b> If a player fails or disconnects, their ID is purged. The Slot 0 controller (CPU-mode) assumes authority over the vacant slot to maintain colony stability until one <b>Supervisor</b> remains.</p>
+
+<h2>04. OVERSEER_CONSOLE</h2>
+<p>The <b>console.html</b> serves as the master authority, allowing for:</p>
+<ul>
+    <li><b>Gate Locking:</b> Prevents new logins when the capsule is at capacity or undergoing maintenance.</li>
+    <li><b>System Purge:</b> Hard-deletes the `colony_session` node, terminating all active links.</li>
+    <li><b>Direct Broadcast:</b> High-priority pink-text overrides injected directly into user terminals via the broadcast node listener.</li>
+</ul>
+
+<h2>05. SAMPLE_HANDSHAKE_CONFIG</h2>
+<div class="code-block">
+const firebaseConfig = {
+  apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+  authDomain: "technodrone-ce06d.firebaseapp.com",
+  databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+  projectId: "technodrone-ce06d",
+  appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+[cite_start]}; [cite: 2]
+</div>
+
+<footer>
+    END_OF_FILE // TECHNODRONE_REBEL_RADIO_2026
+</footer>
+
+</body>
+</html>

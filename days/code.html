@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NODE://STREAK_MAINTENANCE</title>
+    <style>
+        :root {
+            --bg: #000;
+            --dim-text: #222; 
+            --active-text: #444;
+            --rebel-pink: #fe7eaf; 
+            --glow-pink: rgba(254, 126, 175, 0.4);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--active-text);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            padding: env(safe-area-inset-top) 20px;
+        }
+
+        /* Scanline layer matching archive system */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.15) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .nav-wrapper {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 20px);
+            right: 25px;
+            z-index: 101;
+        }
+        .nav-return { 
+            text-decoration: none; 
+            color: var(--dim-text); 
+            font-size: 10px; 
+            letter-spacing: 2px;
+        }
+
+        .directive-frame {
+            border-left: 1px solid #111;
+            border-right: 1px solid #111;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .header-tag {
+            font-size: 9px;
+            color: var(--dim-text);
+            letter-spacing: 5px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        #counter {
+            font-size: 110px;
+            color: var(--rebel-pink);
+            text-shadow: 0 0 20px var(--glow-pink);
+            line-height: 0.8;
+            font-weight: bold;
+            letter-spacing: -5px;
+        }
+
+        .loop-container {
+            margin-top: 30px;
+            height: 15px;
+        }
+
+        #loop-status {
+            font-size: 10px;
+            color: var(--rebel-pink);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .meta-data {
+            margin-top: 50px;
+            font-size: 9px;
+            color: #1a1a1a;
+            line-height: 2;
+            text-align: left;
+            border-top: 1px solid #0a0a0a;
+            padding-top: 10px;
+        }
+
+        .blink { animation: blinker 0.8s step-start infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">//BACK_TO_ROOT</a>
+    </div>
+
+    <div class="directive-frame">
+        <div class="header-tag">ACTIVATION_DIRECTIVE</div>
+        
+        <div id="counter">---</div>
+        
+        <div class="loop-container">
+            <div id="loop-status">INITIALIZING_SIGNAL...</div>
+        </div>
+
+        <div class="meta-data">
+            DATA_ORIGIN: 14.12.24 <br>
+            STATUS: <span style="color: #666;">SIGNAL_CONTINUOUS</span> <br>
+            STREAK_ACTIVE: <span class="blink">TRUE</span>
+        </div>
+    </div>
+
+    <script>
+        const loopPoints = [
+            "SIGNAL_CONTINUOUS",
+            "STREAK_ACTIVE",
+            "NODE_MAINTENANCE_OK",
+            "LOOP_POINTS_RETAINED",
+            "CORE_SYNC_ACTIVE"
+        ];
+
+        function runActivation() {
+            const originDate = new Date('2024-12-14T00:00:00');
+            const now = new Date();
+            const actualDays = Math.floor((now - originDate) / (1000 * 60 * 60 * 24));
+            
+            const counterEl = document.getElementById('counter');
+            let tempCount = 0;
+
+            const interval = setInterval(() => {
+                if (tempCount >= actualDays) {
+                    counterEl.innerText = actualDays.toString().padStart(3, '0');
+                    clearInterval(interval);
+                    startLoop();
+                } else {
+                    tempCount += Math.ceil(actualDays / 25);
+                    if (tempCount > actualDays) tempCount = actualDays;
+                    counterEl.innerText = tempCount.toString().padStart(3, '0');
+                }
+            }, 40);
+        }
+
+        function startLoop() {
+            let i = 0;
+            const statusEl = document.getElementById('loop-status');
+            setInterval(() => {
+                statusEl.innerText = loopPoints[i];
+                i = (i + 1) % loopPoints.length;
+            }, 3000);
+        }
+
+        window.onload = runActivation;
+    </script>
+</body>
+</html>

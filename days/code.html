@@ -26,9 +26,10 @@
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
             padding: env(safe-area-inset-top) 20px;
+            transition: filter 0.1s ease;
         }
 
-        /* Scanline layer matching archive system */
+        /* Scanline layer */
         body::after {
             content: "";
             position: fixed;
@@ -37,6 +38,11 @@
             background-size: 100% 4px;
             pointer-events: none;
             z-index: 100;
+        }
+
+        /* Glitch State */
+        .glitch-active {
+            filter: invert(1) hue-rotate(90deg) contrast(150%);
         }
 
         .nav-wrapper {
@@ -57,6 +63,7 @@
             border-right: 1px solid #111;
             padding: 60px 40px;
             text-align: center;
+            pointer-events: none; /* Allows click-through to body glitch */
         }
 
         .header-tag {
@@ -102,10 +109,10 @@
         @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
-<body>
+<body id="main-terminal">
 
     <div class="nav-wrapper">
-        <a href="../index.html" class="nav-return">//BACK_TO_ROOT</a>
+        <a href="index.html" class="nav-return">//BACK_TO_ROOT</a>
     </div>
 
     <div class="directive-frame">
@@ -132,6 +139,17 @@
             "LOOP_POINTS_RETAINED",
             "CORE_SYNC_ACTIVE"
         ];
+
+        const terminal = document.getElementById('main-terminal');
+
+        function triggerGlitch() {
+            terminal.classList.add('glitch-active');
+            setTimeout(() => terminal.classList.remove('glitch-active'), 120);
+        }
+
+        // Interaction Triggers
+        document.addEventListener('touchstart', triggerGlitch, {passive: true});
+        document.addEventListener('mousedown', triggerGlitch);
 
         function runActivation() {
             const originDate = new Date('2024-12-14T00:00:00');

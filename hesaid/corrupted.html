@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>VOID://CORRUPTED_NODE</title>
+    <style>
+        :root { 
+            --bg: #fff; 
+            --text: #000; 
+            --active-node: #000; 
+            --dim-active: #eee;
+            --glitch-color: #000;
+        }
+
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            filter: grayscale(1) contrast(200%);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        header { letter-spacing: 5px; font-size: 10px; margin-bottom: 20px; text-transform: uppercase; font-weight: bold;}
+        #score-container { font-size: 12px; margin-bottom: 20px; font-weight: bold; }
+
+        /* The Expanding Grid */
+        .matrix-container { 
+            display: grid; 
+            grid-template-columns: repeat(2, 80px); /* Starts 2x2 */
+            gap: 15px; 
+            z-index: 10;
+            max-width: 90vw;
+            justify-content: center;
+        }
+
+        .node { 
+            width: 80px; height: 80px; 
+            border: 3px solid #000; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 10px; cursor: pointer; touch-action: none;
+            transition: transform 0.05s;
+            background: #fff;
+            font-weight: bold;
+        }
+
+        .node.active { 
+            background: #000; 
+            color: #fff; 
+        }
+
+        #init-btn { 
+            margin-top: 40px; 
+            background: #000; 
+            color: #fff; 
+            padding: 15px 30px; 
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 3px;
+        }
+
+        .glitch-flash { animation: flash 0.08s infinite alternate; }
+        @keyframes flash { 0% { filter: invert(0); } 100% { filter: invert(1); } }
+    </style>
+</head>
+<body>
+
+<header>VOID://SYSTEM_CORRUPTION_LEVL_0</header>
+<div id="score-container">VOID_INDEX: <span id="score-val">ERR</span></div>
+
+<div class="matrix-container" id="matrix">
+    <div class="node" id="node-0" data-idx="0">[VOID_01]</div>
+    <div class="node" id="node-1" data-idx="1">[VOID_02]</div>
+    <div class="node" id="node-2" data-idx="2">[VOID_03]</div>
+    <div class="node" id="node-3" data-idx="3">[VOID_04]</div>
+</div>
+
+<button id="init-btn">INIT_VOID_STREAK</button>
+
+<script type="module">
+    const matrix = document.getElementById('matrix');
+    const initBtn = document.getElementById('init-btn');
+    const scoreVal = document.getElementById('score-val');
+    const header = document.querySelector('header');
+    
+    let sequence = [];
+    let userIdx = 0;
+    let isPlaying = false;
+    let audioCtx;
+    let freqs = [110.00, 123.47, 130.81, 146.83]; // Aggressive Low Frequencies
+    let nodeCount = 4;
+
+    function playNote(i) {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        // Evil Pitch Shifting
+        const pitchMultiplier = Math.pow(1.03, sequence.length);
+        
+        osc.type = 'sawtooth'; // Rougher than square
+        osc.frequency.setValueAtTime(freqs[i] * pitchMultiplier, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function spawnEvilNode() {
+        const n = document.createElement('div');
+        n.className = 'node';
+        n.innerText = `[VOID_0${nodeCount + 1}]`;
+        const idx = nodeCount;
+        n.addEventListener('pointerdown', () => handleTap(idx));
+        matrix.appendChild(n);
+        
+        // Add dissonant frequency
+        freqs.push(80 + (Math.random() * 100));
+        nodeCount++;
+
+        // Shift grid layout if nodes increase
+        if(nodeCount > 4) matrix.style.gridTemplateColumns = "repeat(auto-fit, 80px)";
+        header.innerText = `VOID://SYSTEM_CORRUPTION_LEVL_${sequence.length}`;
+    }
+
+    function handleTap(i) {
+        if(isPlaying || sequence.length === 0) return;
+        
+        // Visual distortion on tap
+        const drift = sequence.length * 5;
+        matrix.children[i].style.transform = `translate(${Math.random()*drift - drift/2}px, ${Math.random()*drift - drift/2}px)`;
+        
+        matrix.children[i].classList.add('active');
+        playNote(i);
+        setTimeout(() => matrix.children[i].classList.remove('active'), 150);
+
+        if(i !== sequence[userIdx]) {
+            document.body.classList.add('glitch-flash');
+            setTimeout(() => location.reload(), 1000); // System "Crashes" on fail
+            return;
+        }
+
+        userIdx++;
+        if(userIdx === sequence.length) {
+            if(sequence.length % 3 === 0) spawnEvilNode();
+            setTimeout(() => {
+                sequence.push(Math.floor(Math.random() * nodeCount));
+                playSequence();
+            }, 800);
+        }
+    }
+
+    async function playSequence() {
+        isPlaying = true;
+        userIdx = 0;
+        const interval = Math.max(80, 600 - (sequence.length * 50));
+        scoreVal.textContent = `0x${(sequence.length * 16).toString(16).toUpperCase()}`;
+        
+        for (const i of sequence) {
+            await new Promise(r => setTimeout(r, interval));
+            matrix.children[i].classList.add('active');
+            playNote(i);
+            setTimeout(() => matrix.children[i].classList.remove('active'), interval/2);
+        }
+        isPlaying = false;
+    }
+
+    // Bind initial 4 nodes
+    document.querySelectorAll('.node').forEach((n, i) => {
+        n.addEventListener('pointerdown', () => handleTap(i));
+    });
+
+    initBtn.onclick = () => {
+        sequence = [Math.floor(Math.random() * nodeCount)];
+        initBtn.style.display = "none";
+        playSequence();
+    };
+</script>
+</body>
+</html>

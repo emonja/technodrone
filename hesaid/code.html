@@ -3,26 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>NODE://VARIABLE_ENVIRONMENT</title>
+    <title>NODE://STABILITY_FINAL_v2</title>
     <style>
-        /* 1. THEME DEFINITIONS */
         :root { 
             --bg: #000; 
-            --grid: #111; 
             --text: #444; 
-            --active-node: #fe7eaf; /* Original Rebel Pink */
+            --active-node: #fe7eaf; 
             --dim-active: rgba(254, 126, 175, 0.1);
             --btn-bg: #111;
             --btn-text: #fe7eaf;
             --glitch-color: #fff;
         }
 
-        /* Daylight / Projection Override */
         body.day-mode {
             --bg: #ffffff; 
-            --grid: #dddddd; 
-            --text: #000000; 
-            --active-node: #0066ff; /* Deep blue for projection visibility */
+            --text: #000; 
+            --active-node: #0066ff; 
             --dim-active: #e6f0ff;
             --btn-bg: #000;
             --btn-text: #fff;
@@ -34,72 +30,47 @@
             color: var(--text); 
             font-family: 'Courier New', monospace; 
             margin: 0; 
-            padding: env(safe-area-inset-top) 20px; 
+            height: 100vh; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
-            height: 100vh; 
+            transition: background 1.5s ease; 
             overflow: hidden; 
-            transition: background 0.5s ease, color 0.5s ease;
-            -webkit-tap-highlight-color: transparent; 
+            -webkit-tap-highlight-color: transparent;
         }
 
-        body::after { 
-            content: ""; 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.05) 50%); 
-            background-size: 100% 4px; 
-            pointer-events: none; 
-            z-index: 1000; 
-        }
-
-        header { 
-            letter-spacing: 3px; 
-            font-size: 11px; 
-            margin-bottom: 20px; 
-            text-transform: uppercase;
-        }
-
-        #env-toggle {
-            cursor: pointer;
-            text-decoration: underline;
-            color: var(--active-node);
-        }
+        header { letter-spacing: 3px; font-size: 11px; margin-bottom: 20px; text-transform: uppercase;}
+        #env-info { color: var(--active-node); font-weight: bold; text-decoration: underline; cursor: pointer; }
 
         #score-container { 
             font-size: 12px; 
             margin-bottom: 40px; 
             color: var(--text); 
             font-weight: bold;
+            letter-spacing: 1px;
         }
 
         .matrix-container { 
             display: grid; 
             grid-template-columns: repeat(2, 80px); 
-            grid-template-rows: repeat(2, 80px); 
             gap: 20px; 
+            z-index: 10;
         }
 
         .node { 
             width: 80px; height: 80px; 
-            background: transparent; 
-            border: 1px solid var(--text); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 11px; 
-            transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); 
-            cursor: pointer; 
-            touch-action: none; 
+            border: 2px solid var(--text); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 11px; cursor: pointer; touch-action: none;
+            transition: transform 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            background: transparent;
         }
 
         .node.active { 
             border-color: var(--active-node); 
             background: var(--dim-active); 
             color: var(--active-node); 
-            box-shadow: 0 0 15px var(--dim-active);
         }
 
         #init-btn { 
@@ -108,32 +79,31 @@
             border: 1px solid var(--active-node); 
             color: var(--btn-text); 
             padding: 12px 24px; 
-            font-family: 'Courier New', monospace; 
-            letter-spacing: 2px; 
-            cursor: pointer; 
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            z-index: 100;
+            letter-spacing: 2px;
         }
 
-        /* 2. ADAPTIVE GLITCH */
-        .glitch-flash { animation: flash 0.15s ease-out; }
-        @keyframes flash { 0% { background-color: var(--glitch-color); } 100% { background-color: var(--bg); } }
+        .glitch-flash { animation: flash 0.1s ease-out; }
+        @keyframes flash { 0% { background-color: var(--glitch-color); opacity: 0.8; } 100% { background-color: var(--bg); opacity: 1; } }
     </style>
 </head>
-<body>
+<body id="terminal-body">
 
-<header>NODE://VARIABLE_SYNC | <span id="env-toggle" onclick="toggleEnv()">ENV_CORE</span></header>
+<header>NODE://VARIABLE_SYNC | <span id="env-info">SYNCING...</span></header>
 <div id="score-container">STABILITY_INDEX: <span id="score-val">100%</span></div>
 
-<div class="matrix-container" id="matrix">
-    <div class="node" id="node-0">[N_01]</div>
-    <div class="node" id="node-1">[N_02]</div>
-    <div class="node" id="node-2">[N_03]</div>
-    <div class="node" id="node-3">[N_04]</div>
+<div class="matrix-container">
+    <div class="node" id="node-0" data-idx="0">[N_01]</div>
+    <div class="node" id="node-1" data-idx="1">[N_02]</div>
+    <div class="node" id="node-2" data-idx="2">[N_03]</div>
+    <div class="node" id="node-3" data-idx="3">[N_04]</div>
 </div>
 
 <button id="init-btn">INIT_SYNC</button>
 
 <script type="module">
-    // ... (Firebase Imports and Config same as your previous code) ...
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -149,13 +119,58 @@
     const db = getDatabase(app);
     const mirrorRef = ref(db, 'single_player_showcase');
 
-    // 3. VARIABLE LOGIC
+    let currentStability = 100;
+    const info = document.getElementById('env-info');
+
+    // 1. MANUAL OVERRIDE & TEMPORAL SYNC
     window.toggleEnv = function() {
         const isDay = document.body.classList.toggle('day-mode');
-        document.getElementById('env-toggle').innerText = isDay ? "ENV_DAYLIGHT" : "ENV_CORE";
-        uplink({ environment: isDay ? "DAYLIGHT" : "CORE" });
+        info.innerText = isDay ? "ENV_DAYLIGHT" : "ENV_CORE";
+    }
+    info.onclick = window.toggleEnv;
+
+    function checkTemporalState() {
+        const hour = new Date().getHours();
+        if (hour >= 7 && hour < 19) {
+            document.body.classList.add('day-mode');
+            info.innerText = "ENV_DAYLIGHT";
+        } else {
+            document.body.classList.remove('day-mode');
+            info.innerText = "ENV_CORE";
+        }
     }
 
+    function getEnvelope() {
+        const hour = new Date().getHours();
+        let base = 0.4;
+        if (hour >= 0 && hour < 6) base = 1.2;
+        if (hour >= 12 && hour < 18) base = 0.15;
+        const jitter = currentStability < 50 ? (Math.random() * 0.2) : 0;
+        return base + jitter;
+    }
+
+    // 2. AUDIO ENGINE
+    let audioCtx;
+    const freqs = [174.61, 185.00, 196.00, 207.65];
+
+    function playNote(i) {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const decay = getEnvelope();
+        const pitchMultiplier = Math.pow(1.02, sequence.length);
+        
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freqs[i] * pitchMultiplier, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
+        
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + decay);
+    }
+
+    // 3. CORE LOGIC
     const nodes = document.querySelectorAll('.node');
     const initBtn = document.getElementById('init-btn');
     const scoreVal = document.getElementById('score-val');
@@ -163,64 +178,56 @@
     let sequence = [];
     let userIdx = 0;
     let isPlaying = false;
-    let audioCtx;
-    const freqs = [174.61, 185.00, 196.00, 207.65];
-
-    function uplink(extra = {}) {
-        update(mirrorRef, {
-            id: localStorage.getItem('rhizome_id') || "DEMO_USER",
-            sequence: sequence,
-            timestamp: Date.now(),
-            ...extra
-        });
-    }
-
-    function playNote(i) {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(freqs[i], audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-    }
+    let baseInterval = 700;
 
     function activateNode(i, isUser = false) {
         nodes[i].classList.add('active');
         playNote(i);
-        setTimeout(() => nodes[i].classList.remove('active'), 250);
+        const feedbackDuration = Math.max(100, 250 - (sequence.length * 10));
+        setTimeout(() => nodes[i].classList.remove('active'), feedbackDuration);
+
         if(isUser) {
-            uplink({ last_tap: i });
-            if(sequence.length >= 4) {
-                const x = Math.floor(Math.random() * 60) - 30;
-                const y = Math.floor(Math.random() * 60) - 30;
+            const intensity = (100 - currentStability) / 2;
+            const drift = intensity > 5 ? intensity : 0;
+            if (drift > 0 || sequence.length >= 4) {
+                const x = Math.floor(Math.random() * (drift + 20)) - (drift/2 + 10);
+                const y = Math.floor(Math.random() * (drift + 20)) - (drift/2 + 10);
                 nodes[i].style.transform = `translate(${x}px, ${y}px)`;
-                document.body.classList.add('glitch-flash');
-                setTimeout(() => document.body.classList.remove('glitch-flash'), 150);
+                if (Math.random() * 100 > currentStability) {
+                    document.body.classList.add('glitch-flash');
+                    setTimeout(() => document.body.classList.remove('glitch-flash'), 80);
+                }
             }
+            update(mirrorRef, {
+                id: localStorage.getItem('rhizome_id') || "DEMO_USER",
+                last_tap: i,
+                current_stability: currentStability,
+                timestamp: Date.now()
+            });
         }
     }
 
     async function playSequence() {
         isPlaying = true;
         userIdx = 0;
-        scoreVal.textContent = `${Math.max(0, 100 - (sequence.length * 5))}%`;
+        const acceleratedInterval = Math.max(150, baseInterval - (sequence.length * 30));
+        currentStability = Math.max(0, 100 - (sequence.length * 5));
+        scoreVal.textContent = `${currentStability}%`;
         for (const i of sequence) {
-            await new Promise(r => setTimeout(r, 700));
+            await new Promise(r => setTimeout(r, acceleratedInterval));
             activateNode(i);
         }
         isPlaying = false;
     }
 
     nodes.forEach((node, i) => {
-        node.addEventListener('pointerdown', () => {
+        node.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
             if(isPlaying || sequence.length === 0) return;
             activateNode(i, true);
             if(i !== sequence[userIdx]) {
                 scoreVal.textContent = "FAILURE";
-                uplink({ status: "FAILED" });
+                currentStability = 100;
                 sequence = [];
                 initBtn.style.display = "block";
                 return;
@@ -235,12 +242,17 @@
         });
     });
 
-    initBtn.addEventListener('click', () => {
+    initBtn.onclick = () => {
         nodes.forEach(n => n.style.transform = 'translate(0,0)');
         sequence = [Math.floor(Math.random() * 4)];
         initBtn.style.display = "none";
+        currentStability = 100;
+        scoreVal.textContent = "100%";
         playSequence();
-    });
+    };
+
+    checkTemporalState();
+    setInterval(checkTemporalState, 60000);
 </script>
 </body>
 </html>

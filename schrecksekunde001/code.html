@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SCHRECKSEKUNDE // DRN_STABILIZATION</title>
+    <style>
+        :root {
+            --tear-pink: #ff3399;
+            --bg: #000;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--tear-pink);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .nav-wrapper {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 20px);
+            right: 25px;
+            z-index: 1000;
+        }
+
+        .nav-return {
+            text-decoration: none;
+            color: #333;
+            font-size: 11px;
+            letter-spacing: 2px;
+            border: 1px solid #111;
+            padding: 5px 10px;
+            transition: all 0.3s;
+        }
+        .nav-return:hover { 
+            color: var(--tear-pink); 
+            border-color: var(--tear-pink); 
+            box-shadow: 0 0 8px var(--tear-pink);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            filter: contrast(220%) brightness(1.2);
+            cursor: crosshair;
+        }
+
+        .audio-unit {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom) + 15px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            z-index: 1001;
+            filter: grayscale(100%) opacity(0.5);
+            transition: opacity 0.5s, filter 0.5s;
+            border: 1px solid #111;
+        }
+        .audio-unit:hover {
+            filter: grayscale(0%) opacity(1);
+            border-color: #222;
+        }
+
+        #status {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom) + 70px);
+            left: 25px;
+            font-size: 10px;
+            color: #444;
+            pointer-events: none;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.3) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+<div class="nav-wrapper">
+    <a href="../index.html" class="nav-return">back_to_root</a>
+</div>
+
+<div id="status">
+    INPUT_INTERVENTION: <span id="state">REQUIRED</span><br>
+    COHERENCE_INDEX: <span id="percent">0.00</span>%
+</div>
+
+<canvas id="meltCanvas"></canvas>
+
+<div class="audio-unit">
+    <iframe style="border: 0; width: 100%; height: 42px;" src="https://bandcamp.com/EmbeddedPlayer/track=3485174877/size=small/bgcol=333333/linkcol=ffffff/artwork=none/transparent=true/" seamless><a href="https://estebandelamonja.bandcamp.com/track/zerrei-ung0001">Zerreißung0001 by Esteban De la Monja</a></iframe>
+</div>
+
+<script>
+    const canvas = document.getElementById('meltCanvas');
+    const ctx = canvas.getContext('2d');
+    const percentEl = document.getElementById('percent');
+    const stateEl = document.getElementById('state');
+
+    let particles = [];
+    let coherence = 0; 
+    let isTouching = false;
+
+    function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    class Drip {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.baseSpeed = Math.random() * 0.4 + 0.1;
+            this.width = Math.random() * 2 + 0.2;
+            this.length = Math.random() * 70 + 30;
+        }
+        update() {
+            const chaosLevel = 100 - coherence;
+            const surge = Math.pow(chaosLevel / 12, 2.85); 
+            this.y += this.baseSpeed + surge;
+            if (this.y > canvas.height) {
+                this.y = -this.length;
+                this.x = Math.random() * canvas.width;
+            }
+        }
+        draw() {
+            const alpha = 0.2 + ((100 - coherence) / 120);
+            ctx.fillStyle = `rgba(255, 51, 153, ${alpha})`;
+            ctx.fillRect(this.x, this.y, this.width, this.length);
+        }
+    }
+
+    function triggerHardGlitch() {
+        const chaosLevel = 100 - coherence;
+        const sliceY = Math.random() * canvas.height;
+        const sliceH = Math.random() * 80 * (chaosLevel / 50);
+        const offset = (Math.random() - 0.5) * (chaosLevel * 6);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, sliceY, canvas.width, sliceH);
+        ctx.clip();
+        ctx.drawImage(canvas, offset, 0);
+        ctx.restore();
+    }
+
+    function setup() {
+        particles = [];
+        for (let i = 0; i < 350; i++) particles.push(new Drip());
+    }
+
+    function animate() {
+        const chaosFactor = 100 - coherence;
+        const clearAlpha = Math.max(0.015, 0.12 - (chaosFactor / 850));
+        ctx.fillStyle = `rgba(0, 0, 0, ${clearAlpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (isTouching) {
+            coherence = Math.min(100, coherence + 0.35); 
+        } else {
+            coherence = Math.max(0, coherence - 0.22); 
+        }
+
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+
+        if (Math.random() * 100 > coherence) {
+            triggerHardGlitch();
+            if (coherence < 20) triggerHardGlitch();
+        }
+
+        percentEl.innerText = coherence.toFixed(2);
+        
+        if (coherence > 90) {
+            stateEl.innerText = "COHERENT_LINK";
+            stateEl.style.color = "var(--tear-pink)";
+        } else if (coherence > 30) {
+            stateEl.innerText = "STABILIZING...";
+            stateEl.style.color = "#888";
+        } else {
+            stateEl.innerText = "CRITICAL_DRN";
+            stateEl.style.color = "#333";
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    const startAction = (e) => { isTouching = true; if(e.cancelable) e.preventDefault(); };
+    const endAction = () => { isTouching = false; };
+
+    window.addEventListener('mousedown', startAction);
+    window.addEventListener('mouseup', endAction);
+    window.addEventListener('touchstart', startAction, {passive: false});
+    window.addEventListener('touchend', endAction);
+    window.addEventListener('resize', () => { init(); setup(); });
+
+    init(); setup(); animate();
+</script>
+</body>
+</html>

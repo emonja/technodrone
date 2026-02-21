@@ -78,10 +78,12 @@
             transition: color 0.3s, text-shadow 0.3s;
         }
 
+        /* Node-Specific Hover Highlights */
         .row a:hover { color: #fff; }
         #r5 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
         #r6 a:hover { color: var(--tear-pink); text-shadow: 0 0 8px var(--tear-pink); }
 
+        /* Global Interaction Glitch */
         .glitch-active {
             filter: invert(1) contrast(200%);
             opacity: 0.5;
@@ -153,7 +155,7 @@
 
     <div class="row" id="r6">
         <span>25.01.26</span><span>[DRN]</span>
-        <a href="schrecksekunde001/code.html">SCHRECKSEKUNDE0001</a>
+        <a href="zerreissung/code.html">ZERREISSUNG</a>
     </div>
 </div>
 
@@ -183,7 +185,6 @@
     }
 
     function revealRows() {
-        // Updated to include r6 in the reveal sequence
         ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'].forEach((id, index) => {
             setTimeout(() => {
                 const el = document.getElementById(id);

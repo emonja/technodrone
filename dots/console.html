@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CENTRO DE CONTROL - COMUNICACIONES</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* ... (Styles remain the same) ... */
+:root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #8a6a3e; --line: #3b2a14; --danger: #ff0000; --safe: #00ff41; }
+body { background: var(--bg); color: var(--fg); font-family: "Lucida Console", monospace; padding: 40px; }
+.admin-panel { max-width: 600px; margin: 0 auto; border: 2px solid var(--fg); padding: 30px; background: #12100b; }
+h1 { font-size: 18px; margin-bottom: 20px; border-bottom: 1px solid var(--fg); padding-bottom: 10px; }
+.status-box { margin: 20px 0; padding: 15px; border: 1px solid var(--line); }
+.data-stat { font-size: 24px; color: var(--safe); margin: 10px 0; }
+.warning-zone { margin-top: 40px; border: 1px dashed var(--danger); padding: 20px; }
+.btn-admin { width: 100%; background: transparent; border: 1px solid var(--fg); color: var(--fg); padding: 15px; font-family: inherit; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+.btn-admin:hover { background: var(--fg); color: var(--bg); }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="admin-panel">
+    <h1>PANEL DE ADMINISTRACIÓN: MORSE_NODE</h1>
+    
+    <div class="status-box">
+        <p>ESTADO DEL CANAL:</p>
+        <div id="channel-status-text" style="font-size: 20px; margin: 10px 0;">VERIFICANDO...</div>
+        <button class="btn-admin" id="toggle-status-btn">CAMBIAR ESTADO</button>
+    </div>
+
+    <div class="status-box">
+        <p>MENSAJES EN MEMORIA:</p>
+        <div class="data-stat" id="msg-count">0</div>
+    </div>
+
+    <div class="warning-zone">
+        <button class="btn-admin btn-danger" id="purge-btn">EJECUTAR LIMPIEZA GLOBAL</button>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+  authDomain: "technodrone-ce06d.firebaseapp.com",
+  databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+  projectId: "technodrone-ce06d",
+  appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const statusRef = ref(db, "system_status");
+const chatRef = ref(db, "morse_chat");
+
+let currentStatus = true;
+
+// Sync Toggle State
+onValue(statusRef, (snapshot) => {
+    currentStatus = snapshot.val()?.active ?? true;
+    const statusText = document.getElementById('channel-status-text');
+    statusText.innerText = currentStatus ? "ONLINE / ABIERTO" : "OFFLINE / CERRADO";
+    statusText.style.color = currentStatus ? "#00ff41" : "#ff0000";
+});
+
+document.getElementById('toggle-status-btn').addEventListener('click', () => {
+    update(statusRef, { active: !currentStatus });
+});
+
+// Message count and Purge logic remain the same...
+onValue(chatRef, (snapshot) => {
+    const data = snapshot.val();
+    document.getElementById('msg-count').innerText = data ? Object.keys(data).length : 0;
+});
+
+document.getElementById('purge-btn').addEventListener('click', () => {
+    if (confirm("¿PURGAR TODO?")) remove(chatRef);
+});
+</script>
+</body>
+</html>

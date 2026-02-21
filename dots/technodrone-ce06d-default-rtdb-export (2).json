@@ -1,0 +1,101 @@
+{
+  "single_player_showcase": {
+    "current_stability": 70,
+    "current_step": 4,
+    "environment": "DAYLIGHT",
+    "id": "DEMO_USER",
+    "last_tap": 2,
+    "sequence": [
+      0
+    ],
+    "status": "FAILED",
+    "timestamp": 1771658449545
+  },
+  "techno_sequencer": {
+    "bpm": 120,
+    "grid": {
+      "3": [
+        true
+      ],
+      "4": [
+        true
+      ]
+    },
+    "playing": true,
+    "roster": {
+      "A00232392": {
+        "active": true,
+        "name": "Acosta Limón, Luis Ángel"
+      },
+      "A00572999": {
+        "active": true,
+        "name": "Aguirre León, María Fernanda"
+      },
+      "A00841933": {
+        "active": true,
+        "name": "Salazar Osuna, Marco Antonio"
+      },
+      "A01277671": {
+        "active": true,
+        "name": "Vilchis Montalvo, Victoria Naomi"
+      },
+      "A01541196": {
+        "active": true,
+        "name": "Macías Duarte, Claudio Rafael"
+      },
+      "A01643306": {
+        "active": true,
+        "name": "Carrillo Rosa Lopes, Gabriel Alejandro"
+      },
+      "A01643433": {
+        "active": true,
+        "name": "Orozco Haro, María José"
+      },
+      "A01643608": {
+        "active": true,
+        "name": "Negrete Gutiérrez, Carlos Gabriel"
+      },
+      "A01644065": {
+        "active": true,
+        "name": "Peña Zavala, Camila Giselle"
+      },
+      "A01645960": {
+        "active": true,
+        "name": "Núñez Martínez, Melanie"
+      },
+      "A01647800": {
+        "active": true,
+        "name": "Moreno Martínez, Regina"
+      },
+      "A01648739": {
+        "active": true,
+        "name": "García Romero, Michelle"
+      },
+      "A01648756": {
+        "active": true,
+        "name": "Casillas Gil, Diego Santiago"
+      },
+      "A01649094": {
+        "active": true,
+        "name": "Kelly Soberanes, Mateo"
+      },
+      "A01649340": {
+        "active": true,
+        "name": "Rodriguez Ambrocio, Aixa Dajani"
+      },
+      "A01649350": {
+        "active": true,
+        "name": "Villegas Torres, Maiara Daniela"
+      },
+      "L666": {
+        "active": true,
+        "name": "Usuario de prueba"
+      }
+    },
+    "users": {
+      "L666": {
+        "note": 3
+      }
+    }
+  }
+}

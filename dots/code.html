@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TERMINAL DE TELEGRAFÍA - MODO INCÓGNITO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* -------------------------
+   PALETA FÓSFORO ÁMBAR
+-------------------------- */
+:root {
+  --bg: #0b0a07;
+  --fg: #d6a15c;
+  --fg-dim: #8a6a3e;
+  --line: #3b2a14;
+  --alert: #ff4e00; 
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Lucida Console", "Monaco", monospace;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow: hidden; 
+}
+
+body { padding: 20px; }
+
+.system {
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  padding: 24px;
+  position: relative;
+  opacity: 0.3; 
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+
+.system.active { opacity: 1; pointer-events: auto; }
+
+/* -------------------------
+   KILLSWITCH STYLES
+-------------------------- */
+#locked-overlay {
+    display: none;
+    color: var(--alert);
+    text-align: center;
+    padding: 15px;
+    border: 1px dashed var(--alert);
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.system.locked #message-input { display: none; }
+.system.locked #locked-overlay { display: block; }
+
+/* -------------------------
+   MODAL / LOGIN
+-------------------------- */
+#modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    border: 1px solid var(--fg);
+    padding: 40px;
+    text-align: center;
+    background: #12100b;
+}
+
+/* -------------------------
+   UI COMPONENTS
+-------------------------- */
+#tx-light {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #201a10; border: 1px solid var(--line);
+    display: inline-block; vertical-align: middle;
+    margin-right: 10px; transition: background 0.05s;
+}
+
+#tx-light.active { background: var(--alert); box-shadow: 0 0 12px var(--alert); }
+
+.label, .meta, .footer { color: var(--fg-dim); text-transform: uppercase; font-size: 11px; }
+
+#log {
+  height: 300px; overflow-y: auto;
+  border: 1px solid var(--line); padding: 15px;
+  margin-bottom: 15px; background: rgba(0,0,0,0.3);
+}
+
+.morse-msg { margin-bottom: 6px; border-bottom: 1px solid #1a150e; padding-bottom: 4px; }
+.timestamp { color: var(--fg-dim); font-size: 10px; margin-right: 8px; }
+.nick { color: var(--fg); font-weight: bold; margin-right: 8px; }
+
+input {
+  width: 100%; background: transparent; border: 1px solid var(--line);
+  color: var(--fg); font-family: inherit; font-size: 14px;
+  padding: 10px; margin-bottom: 15px;
+}
+
+.btn-export, .btn-login {
+    background: transparent; border: 1px solid var(--fg);
+    color: var(--fg); padding: 10px 20px;
+    font-family: inherit; cursor: pointer; text-transform: uppercase;
+}
+
+.btn-export { font-size: 10px; padding: 5px 10px; border-color: var(--fg-dim); color: var(--fg-dim); }
+.btn-login:hover, .btn-export:hover { background: var(--fg); color: var(--bg); }
+
+.footer { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+
+<div id="modal-overlay">
+    <div class="modal">
+        <h2 style="margin-bottom: 20px; letter-spacing: 0.2em;">ACCESO REQUERIDO</h2>
+        <p class="meta" style="margin-bottom: 30px;">INICIALIZAR CONEXIÓN PARA ESTABLECER VÍNCULO</p>
+        <button class="btn-login" id="init-btn">ESTABLECER VÍNCULO</button>
+    </div>
+</div>
+
+<div class="system" id="terminal-ui">
+  <div class="label">UNIDAD: TERMINAL_MORSE_V3</div>
+  <h1><div id="tx-light"></div>CANAL DE EMERGENCIA</h1>
+
+  <p class="meta">
+    SESIÓN: <span id="current-nick" style="color:var(--fg)">---</span> <br>
+    PROTOCOLO: TELEGRAFÍA ASÍNCRONA
+  </p>
+
+  <hr>
+
+  <div id="log"></div>
+  <div id="locked-overlay">CANAL CERRADO POR ADMINISTRACIÓN</div>
+
+  <input type="text" id="message-input" placeholder="INGRESE MENSAJE Y PRESIONE ENTER" autocomplete="off">
+
+  <div class="footer">
+    <div>MODO: INCÓGNITO</div>
+    <button class="btn-export" id="btn-download">LOG_DUMP.TXT</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+  authDomain: "technodrone-ce06d.firebaseapp.com",
+  databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+  projectId: "technodrone-ce06d",
+  appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const chatRef = ref(db, "morse_chat");
+const statusRef = ref(db, "system_status");
+
+const myNick = "ANON_" + Math.random().toString(36).substr(2, 4).toUpperCase();
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const MORSE_LIB = {
+    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 
+    'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 
+    'M': '--', 'N': '-.', 'Ñ': '--.--', 'O': '---', 'P': '.--.', 'Q': '--.-', 
+    'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 
+    'X': '-..-', 'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', 
+    '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...', 
+    '8': '---..', '9': '----.', '0': '-----', ' ': '/'
+};
+
+// 1. LOGIN / UNLOCK HARDWARE
+document.getElementById('init-btn').addEventListener('click', () => {
+    audioCtx.resume();
+    document.getElementById('modal-overlay').style.display = 'none';
+    document.getElementById('terminal-ui').classList.add('active');
+    document.getElementById('current-nick').innerText = myNick;
+    document.body.style.overflow = 'auto';
+});
+
+// 2. KILLSWITCH LISTENER
+onValue(statusRef, (snapshot) => {
+    const isActive = snapshot.val()?.active ?? true;
+    const terminalUI = document.getElementById('terminal-ui');
+    if (isActive) {
+        terminalUI.classList.remove('locked');
+    } else {
+        terminalUI.classList.add('locked');
+    }
+});
+
+// 3. SENDING LOGIC
+document.getElementById('message-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.value.trim() !== '') {
+        const text = e.target.value.toUpperCase();
+        const morse = text.split('').map(c => MORSE_LIB[c] || '').join(' ');
+        push(chatRef, { sender: myNick, morse: morse, timestamp: serverTimestamp() });
+        e.target.value = '';
+    }
+});
+
+// 4. RECEIVING LOGIC
+onChildAdded(chatRef, (snapshot) => {
+    const data = snapshot.val();
+    const div = document.createElement('div');
+    div.className = 'morse-msg';
+    const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "NOW";
+    div.innerHTML = `<span class="timestamp">[${time}]</span><span class="nick">&lt;${data.sender}&gt;</span> ${data.morse}`;
+    document.getElementById('log').appendChild(div);
+    document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+    playMorseSequence(data.morse);
+});
+
+async function playMorseSequence(morse) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    for (const char of morse) {
+        if (char === '.' || char === '-') {
+            const duration = char === '.' ? 80 : 250;
+            document.getElementById('tx-light').classList.add('active');
+            if (navigator.vibrate) navigator.vibrate(duration);
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = 750;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            osc.start();
+            await new Promise(r => setTimeout(r, duration));
+            osc.stop();
+            document.getElementById('tx-light').classList.remove('active');
+            await new Promise(r => setTimeout(r, 80));
+        } else if (char === ' ') { await new Promise(r => setTimeout(r, 200)); }
+          else if (char === '/') { await new Promise(r => setTimeout(r, 400)); }
+    }
+}
+
+// 5. EXPORT LOGIC
+document.getElementById('btn-download').addEventListener('click', () => {
+    const history = Array.from(document.querySelectorAll('.morse-msg')).map(el => el.innerText).join('\n');
+    const blob = new Blob([`LOG EXPORT - ${myNick}\n${history}`], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LOG_${myNick}.txt`;
+    a.click();
+});
+</script>
+</body>
+</html>

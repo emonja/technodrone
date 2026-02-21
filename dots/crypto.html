@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CRIPTÓGRAFO - TECHNODRONE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+/* -------------------------
+   PALETA FÓSFORO ÁMBAR
+-------------------------- */
+:root { 
+    --bg: #0b0a07; 
+    --fg: #d6a15c; 
+    --fg-dim: #8a6a3e;
+    --line: #3b2a14; 
+    --alert: #ff4e00;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    background: var(--bg); 
+    color: var(--fg); 
+    font-family: "Lucida Console", monospace; 
+    padding: 20px; 
+    display: flex;
+    justify-content: center;
+}
+
+.unit { 
+    width: 100%;
+    max-width: 500px; 
+    border: 1px solid var(--line); 
+    padding: 25px; 
+    background: #12100b;
+}
+
+h1 { 
+    font-size: 14px; 
+    text-transform: uppercase; 
+    margin-bottom: 20px; 
+    border-bottom: 1px solid var(--line); 
+    padding-bottom: 5px; 
+    letter-spacing: 2px;
+}
+
+/* -------------------------
+   TOGGLE SWITCH STYLES
+-------------------------- */
+.mode-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #000;
+    border: 1px solid var(--line);
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.mode-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+}
+
+.mode-label.active {
+    color: var(--fg);
+    text-shadow: 0 0 5px var(--fg);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--line);
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px; width: 14px;
+    left: 3px; bottom: 3px;
+    background-color: var(--fg);
+    transition: .4s;
+}
+
+input:checked + .slider { background-color: var(--fg-dim); }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* -------------------------
+   INPUTS
+-------------------------- */
+label { font-size: 10px; text-transform: uppercase; color: var(--fg-dim); display: block; margin-bottom: 5px; }
+
+textarea {
+    width: 100%; height: 120px; 
+    background: transparent; 
+    border: 1px solid var(--line);
+    color: var(--fg); 
+    font-family: inherit; 
+    padding: 12px; 
+    resize: none; 
+    margin-bottom: 20px;
+    font-size: 16px; /* Prevents mobile zoom */
+}
+
+textarea:focus { outline: none; border-color: var(--fg); }
+textarea[readonly] { color: var(--fg-dim); border-style: dashed; }
+
+.footer-info { font-size: 9px; color: var(--fg-dim); text-align: center; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="unit">
+    <h1>CRIPTÓGRAFO_MOD_01</h1>
+    
+    <div class="mode-selector">
+        <span class="mode-label" id="label-text">Texto > Morse</span>
+        <label class="switch">
+            <input type="checkbox" id="mode-toggle">
+            <span class="slider"></span>
+        </label>
+        <span class="mode-label" id="label-morse">Morse > Texto</span>
+    </div>
+
+    <div id="input-area">
+        <label id="top-label">Entrada: Texto</label>
+        <textarea id="main-input" placeholder="ESCRIBA PARA CODIFICAR..."></textarea>
+
+        <label id="bottom-label">Salida: Código Morse</label>
+        <textarea id="main-output" readonly placeholder="... --- ..."></textarea>
+    </div>
+    
+    <div class="footer-info">PROCESADOR TECHNODRONE — SISTEMA ESTABLE</div>
+</div>
+
+<script>
+const LIB = { 
+    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 
+    'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 
+    'M': '--', 'N': '-.', 'Ñ': '--.--', 'O': '---', 'P': '.--.', 'Q': '--.-', 
+    'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 
+    'X': '-..-', 'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', 
+    '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...', 
+    '8': '---..', '9': '----.', '0': '-----', ' ': '/' 
+};
+
+const REV = Object.fromEntries(Object.entries(LIB).map(([k, v]) => [v, k]));
+
+const toggle = document.getElementById('mode-toggle');
+const inputField = document.getElementById('main-input');
+const outputField = document.getElementById('main-output');
+const topLabel = document.getElementById('top-label');
+const bottomLabel = document.getElementById('bottom-label');
+const labelText = document.getElementById('label-text');
+const labelMorse = document.getElementById('label-morse');
+
+function translate() {
+    const val = inputField.value.trim();
+    if (!val) {
+        outputField.value = '';
+        return;
+    }
+
+    if (!toggle.checked) {
+        // Text to Morse
+        outputField.value = val.toUpperCase().split('')
+            .map(c => LIB[c] || '')
+            .join(' ');
+    } else {
+        // Morse to Text
+        outputField.value = val.split(' ')
+            .map(s => REV[s] || (s === '/' ? ' ' : ''))
+            .join('');
+    }
+}
+
+toggle.addEventListener('change', () => {
+    // Reset fields and change labels
+    inputField.value = '';
+    outputField.value = '';
+    
+    if (toggle.checked) {
+        topLabel.innerText = "Entrada: Código Morse";
+        bottomLabel.innerText = "Salida: Texto";
+        inputField.placeholder = "- . - - -";
+        labelText.classList.remove('active');
+        labelMorse.classList.add('active');
+    } else {
+        topLabel.innerText = "Entrada: Texto";
+        bottomLabel.innerText = "Salida: Código Morse";
+        inputField.placeholder = "ESCRIBA PARA CODIFICAR...";
+        labelText.classList.add('active');
+        labelMorse.classList.remove('active');
+    }
+});
+
+inputField.addEventListener('input', translate);
+
+// Initialize labels
+labelText.classList.add('active');
+</script>
+</body>
+</html>

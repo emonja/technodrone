@@ -38,10 +38,42 @@
             transition: background 1.5s ease; 
             overflow: hidden; 
             -webkit-tap-highlight-color: transparent;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
         }
 
-        header { letter-spacing: 3px; font-size: 11px; margin-bottom: 20px; text-transform: uppercase;}
-        #env-info { color: var(--active-node); font-weight: bold; text-decoration: underline; cursor: pointer; }
+        /* ── Back to root link ── */
+        .nav-wrapper {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 20px);
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .nav-return {
+            text-decoration: none;
+            color: #444;
+            font-size: 11px;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+
+        .nav-return:hover {
+            color: #fff;
+        }
+
+        header { 
+            letter-spacing: 3px; 
+            font-size: 11px; 
+            margin-bottom: 20px; 
+            text-transform: uppercase;
+        }
+
+        #env-info { 
+            color: var(--active-node); 
+            font-weight: bold; 
+            text-decoration: underline; 
+            cursor: pointer; 
+        }
 
         #score-container { 
             font-size: 12px; 
@@ -91,168 +123,172 @@
 </head>
 <body id="terminal-body">
 
-<header>NODE://VARIABLE_SYNC | <span id="env-info">SYNCING...</span></header>
-<div id="score-container">STABILITY_INDEX: <span id="score-val">100%</span></div>
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">back_to_root</a>
+    </div>
 
-<div class="matrix-container">
-    <div class="node" id="node-0" data-idx="0">[N_01]</div>
-    <div class="node" id="node-1" data-idx="1">[N_02]</div>
-    <div class="node" id="node-2" data-idx="2">[N_03]</div>
-    <div class="node" id="node-3" data-idx="3">[N_04]</div>
-</div>
+    <header>NODE://VARIABLE_SYNC | <span id="env-info">SYNCING...</span></header>
+    <div id="score-container">STABILITY_INDEX: <span id="score-val">100%</span></div>
 
-<button id="init-btn">INIT_SYNC</button>
+    <div class="matrix-container">
+        <div class="node" id="node-0" data-idx="0">[N_01]</div>
+        <div class="node" id="node-1" data-idx="1">[N_02]</div>
+        <div class="node" id="node-2" data-idx="2">[N_03]</div>
+        <div class="node" id="node-3" data-idx="3">[N_04]</div>
+    </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <button id="init-btn">INIT_SYNC</button>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
-        authDomain: "technodrone-ce06d.firebaseapp.com",
-        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
-        projectId: "technodrone-ce06d",
-        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
-    };
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const mirrorRef = ref(db, 'single_player_showcase');
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+            authDomain: "technodrone-ce06d.firebaseapp.com",
+            databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+            projectId: "technodrone-ce06d",
+            appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+        };
 
-    let currentStability = 100;
-    const info = document.getElementById('env-info');
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const mirrorRef = ref(db, 'single_player_showcase');
 
-    // 1. MANUAL OVERRIDE & TEMPORAL SYNC
-    window.toggleEnv = function() {
-        const isDay = document.body.classList.toggle('day-mode');
-        info.innerText = isDay ? "ENV_DAYLIGHT" : "ENV_CORE";
-    }
-    info.onclick = window.toggleEnv;
+        let currentStability = 100;
+        const info = document.getElementById('env-info');
 
-    function checkTemporalState() {
-        const hour = new Date().getHours();
-        if (hour >= 7 && hour < 19) {
-            document.body.classList.add('day-mode');
-            info.innerText = "ENV_DAYLIGHT";
-        } else {
-            document.body.classList.remove('day-mode');
-            info.innerText = "ENV_CORE";
+        // 1. MANUAL OVERRIDE & TEMPORAL SYNC
+        window.toggleEnv = function() {
+            const isDay = document.body.classList.toggle('day-mode');
+            info.innerText = isDay ? "ENV_DAYLIGHT" : "ENV_CORE";
         }
-    }
+        info.onclick = window.toggleEnv;
 
-    function getEnvelope() {
-        const hour = new Date().getHours();
-        let base = 0.4;
-        if (hour >= 0 && hour < 6) base = 1.2;
-        if (hour >= 12 && hour < 18) base = 0.15;
-        const jitter = currentStability < 50 ? (Math.random() * 0.2) : 0;
-        return base + jitter;
-    }
+        function checkTemporalState() {
+            const hour = new Date().getHours();
+            if (hour >= 7 && hour < 19) {
+                document.body.classList.add('day-mode');
+                info.innerText = "ENV_DAYLIGHT";
+            } else {
+                document.body.classList.remove('day-mode');
+                info.innerText = "ENV_CORE";
+            }
+        }
 
-    // 2. AUDIO ENGINE
-    let audioCtx;
-    const freqs = [174.61, 185.00, 196.00, 207.65];
+        function getEnvelope() {
+            const hour = new Date().getHours();
+            let base = 0.4;
+            if (hour >= 0 && hour < 6) base = 1.2;
+            if (hour >= 12 && hour < 18) base = 0.15;
+            const jitter = currentStability < 50 ? (Math.random() * 0.2) : 0;
+            return base + jitter;
+        }
 
-    function playNote(i) {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        const decay = getEnvelope();
-        const pitchMultiplier = Math.pow(1.02, sequence.length);
+        // 2. AUDIO ENGINE
+        let audioCtx;
+        const freqs = [174.61, 185.00, 196.00, 207.65];
+
+        function playNote(i) {
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const decay = getEnvelope();
+            const pitchMultiplier = Math.pow(1.02, sequence.length);
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freqs[i] * pitchMultiplier, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
+            
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + decay);
+        }
+
+        // 3. CORE LOGIC
+        const nodes = document.querySelectorAll('.node');
+        const initBtn = document.getElementById('init-btn');
+        const scoreVal = document.getElementById('score-val');
         
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(freqs[i] * pitchMultiplier, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
-        
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + decay);
-    }
+        let sequence = [];
+        let userIdx = 0;
+        let isPlaying = false;
+        let baseInterval = 700;
 
-    // 3. CORE LOGIC
-    const nodes = document.querySelectorAll('.node');
-    const initBtn = document.getElementById('init-btn');
-    const scoreVal = document.getElementById('score-val');
-    
-    let sequence = [];
-    let userIdx = 0;
-    let isPlaying = false;
-    let baseInterval = 700;
+        function activateNode(i, isUser = false) {
+            nodes[i].classList.add('active');
+            playNote(i);
+            const feedbackDuration = Math.max(100, 250 - (sequence.length * 10));
+            setTimeout(() => nodes[i].classList.remove('active'), feedbackDuration);
 
-    function activateNode(i, isUser = false) {
-        nodes[i].classList.add('active');
-        playNote(i);
-        const feedbackDuration = Math.max(100, 250 - (sequence.length * 10));
-        setTimeout(() => nodes[i].classList.remove('active'), feedbackDuration);
-
-        if(isUser) {
-            const intensity = (100 - currentStability) / 2;
-            const drift = intensity > 5 ? intensity : 0;
-            if (drift > 0 || sequence.length >= 4) {
-                const x = Math.floor(Math.random() * (drift + 20)) - (drift/2 + 10);
-                const y = Math.floor(Math.random() * (drift + 20)) - (drift/2 + 10);
-                nodes[i].style.transform = `translate(${x}px, ${y}px)`;
-                if (Math.random() * 100 > currentStability) {
-                    document.body.classList.add('glitch-flash');
-                    setTimeout(() => document.body.classList.remove('glitch-flash'), 80);
+            if(isUser) {
+                const intensity = (100 - currentStability) / 2;
+                const drift = intensity > 5 ? intensity : 0;
+                if (drift > 0 || sequence.length >= 4) {
+                    const x = Math.floor(Math.random() * (drift + 20)) - (drift/2 + 10);
+                    const y = Math.floor(Math.random() * (drift + 20)) - (drift/2 + 10);
+                    nodes[i].style.transform = `translate(${x}px, ${y}px)`;
+                    if (Math.random() * 100 > currentStability) {
+                        document.body.classList.add('glitch-flash');
+                        setTimeout(() => document.body.classList.remove('glitch-flash'), 80);
+                    }
                 }
+                update(mirrorRef, {
+                    id: localStorage.getItem('rhizome_id') || "DEMO_USER",
+                    last_tap: i,
+                    current_stability: currentStability,
+                    timestamp: Date.now()
+                });
             }
-            update(mirrorRef, {
-                id: localStorage.getItem('rhizome_id') || "DEMO_USER",
-                last_tap: i,
-                current_stability: currentStability,
-                timestamp: Date.now()
+        }
+
+        async function playSequence() {
+            isPlaying = true;
+            userIdx = 0;
+            const acceleratedInterval = Math.max(150, baseInterval - (sequence.length * 30));
+            currentStability = Math.max(0, 100 - (sequence.length * 5));
+            scoreVal.textContent = `${currentStability}%`;
+            for (const i of sequence) {
+                await new Promise(r => setTimeout(r, acceleratedInterval));
+                activateNode(i);
+            }
+            isPlaying = false;
+        }
+
+        nodes.forEach((node, i) => {
+            node.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if(isPlaying || sequence.length === 0) return;
+                activateNode(i, true);
+                if(i !== sequence[userIdx]) {
+                    scoreVal.textContent = "FAILURE";
+                    currentStability = 100;
+                    sequence = [];
+                    initBtn.style.display = "block";
+                    return;
+                }
+                userIdx++;
+                if(userIdx === sequence.length) {
+                    setTimeout(() => {
+                        sequence.push(Math.floor(Math.random() * 4));
+                        playSequence();
+                    }, 1000);
+                }
             });
-        }
-    }
-
-    async function playSequence() {
-        isPlaying = true;
-        userIdx = 0;
-        const acceleratedInterval = Math.max(150, baseInterval - (sequence.length * 30));
-        currentStability = Math.max(0, 100 - (sequence.length * 5));
-        scoreVal.textContent = `${currentStability}%`;
-        for (const i of sequence) {
-            await new Promise(r => setTimeout(r, acceleratedInterval));
-            activateNode(i);
-        }
-        isPlaying = false;
-    }
-
-    nodes.forEach((node, i) => {
-        node.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            if(isPlaying || sequence.length === 0) return;
-            activateNode(i, true);
-            if(i !== sequence[userIdx]) {
-                scoreVal.textContent = "FAILURE";
-                currentStability = 100;
-                sequence = [];
-                initBtn.style.display = "block";
-                return;
-            }
-            userIdx++;
-            if(userIdx === sequence.length) {
-                setTimeout(() => {
-                    sequence.push(Math.floor(Math.random() * 4));
-                    playSequence();
-                }, 1000);
-            }
         });
-    });
 
-    initBtn.onclick = () => {
-        nodes.forEach(n => n.style.transform = 'translate(0,0)');
-        sequence = [Math.floor(Math.random() * 4)];
-        initBtn.style.display = "none";
-        currentStability = 100;
-        scoreVal.textContent = "100%";
-        playSequence();
-    };
+        initBtn.onclick = () => {
+            nodes.forEach(n => n.style.transform = 'translate(0,0)');
+            sequence = [Math.floor(Math.random() * 4)];
+            initBtn.style.display = "none";
+            currentStability = 100;
+            scoreVal.textContent = "100%";
+            playSequence();
+        };
 
-    checkTemporalState();
-    setInterval(checkTemporalState, 60000);
-</script>
+        checkTemporalState();
+        setInterval(checkTemporalState, 60000);
+    </script>
 </body>
 </html>

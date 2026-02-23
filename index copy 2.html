@@ -81,7 +81,6 @@
         .row a:hover { color: #fff; }
         #r5 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
         #r6 a:hover { color: var(--tear-pink); text-shadow: 0 0 8px var(--tear-pink); }
-        #r7 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
 
         .glitch-active {
             filter: invert(1) contrast(200%);
@@ -156,11 +155,6 @@
         <span>25.01.26</span><span>[DRN]</span>
         <a href="schrecksekunde001/code.html">SCHRECKSEKUNDE0001</a>
     </div>
-
-    <div class="row" id="r7">
-        <span>23.02.26</span><span>[MEM]</span>
-        <a href="hesaid/code.html">NODE://STABILITY_FINAL_v2</a>
-    </div>
 </div>
 
 <footer id="footer-bits">
@@ -189,7 +183,8 @@
     }
 
     function revealRows() {
-        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'].forEach((id, index) => {
+        // Updated to include r6 in the reveal sequence
+        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6'].forEach((id, index) => {
             setTimeout(() => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('visible');

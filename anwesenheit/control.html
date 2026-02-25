@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CONTROL DE POSICIÓN - SEHNSUCHT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #8a6a3e; --line: #3b2a14; --alert: #ff4e00; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: var(--bg); color: var(--fg-dim); 
+            font-family: "Lucida Console", monospace; font-size: 13px; padding: 20px; 
+        }
+        .container { max-width: 600px; margin: 0 auto; border: 1px solid var(--line); padding: 20px; }
+        #modal-geo {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 100; display: flex; align-items: center; justify-content: center;
+        }
+        .modal-box { border: 1px solid var(--fg); padding: 30px; text-align: center; }
+        .btn-sys {
+            background: transparent; border: 1px solid var(--fg); color: var(--fg);
+            padding: 12px 20px; cursor: pointer; text-transform: uppercase; font-family: inherit;
+        }
+        .btn-sys:hover { background: var(--fg); color: var(--bg); }
+        #console {
+            height: 300px; border: 1px solid var(--line); background: rgba(0,0,0,0.5);
+            padding: 10px; overflow-y: auto; color: var(--fg); font-size: 11px; margin-top: 15px;
+        }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .stat-card { border: 1px solid var(--line); padding: 10px; }
+        .stat-val { color: var(--fg); font-weight: bold; font-size: 1.2rem; }
+        .pulse { animation: blink 1s infinite; color: var(--alert); }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="modal-geo">
+    <div class="modal-box">
+        <h2 style="color: var(--fg); margin-bottom: 20px;">AUTORIZAR RASTREO</h2>
+        <p style="margin-bottom: 20px;">ESTABLECER VÍNCULO GEODÉSICO CON EL PROTOCOLO SEHNSUCHT</p>
+        <button class="btn-sys" id="start-btn">INICIAR TRANSMISIÓN</button>
+    </div>
+</div>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between;">
+        <span>MODO: MASTER_CONTROL</span>
+        <span class="pulse">● TRANSMITIENDO</span>
+    </div>
+    <hr style="border: 0; border-top: 1px solid var(--line); margin: 15px 0;">
+    
+    <div class="stat-grid">
+        <div class="stat-card">LATITUD<br><span id="lat-display" class="stat-val">0.0000</span></div>
+        <div class="stat-card">LONGITUD<br><span id="lng-display" class="stat-val">0.0000</span></div>
+    </div>
+
+    <div id="console"></div>
+    
+    <div style="margin-top: 20px; font-size: 10px; color: var(--fg-dim);">
+        FRECUENCIA DE ACTUALIZACIÓN: 5000ms<br>
+        DATABASE_STATUS: CONECTADO
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+        authDomain: "technodrone-ce06d.firebaseapp.com",
+        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+        projectId: "technodrone-ce06d",
+        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const consoleEl = document.getElementById('console');
+
+    function log(msg) {
+        const entry = document.createElement('div');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        consoleEl.prepend(entry);
+    }
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+        document.getElementById('modal-geo').style.display = 'none';
+        
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition((position) => {
+                const { latitude, longitude } = position.coords;
+                
+                document.getElementById('lat-display').innerText = latitude.toFixed(4);
+                document.getElementById('lng-display').innerText = longitude.toFixed(4);
+
+                // Update real-time "Current Presence"
+                set(ref(db, 'system_status/master_pos'), {
+                    lat: latitude,
+                    lng: longitude,
+                    last_update: serverTimestamp()
+                });
+
+                // Push to trace history
+                push(ref(db, 'geo_trace'), {
+                    lat: latitude,
+                    lng: longitude,
+                    timestamp: serverTimestamp()
+                });
+
+                log(`SYNC_SUCCESS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+            }, (err) => {
+                log(`ERROR: ${err.message}`);
+            }, { enableHighAccuracy: true });
+        } else {
+            log("CRITICAL_ERROR: GEOLOCATION_UNAVAILABLE");
+        }
+    });
+</script>
+</body>
+</html>

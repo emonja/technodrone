@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>VISOR DE RASTREO - SEHNSUCHT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --bg: #0b0a07; --fg: #d6a15c; --fg-dim: #8a6a3e; --line: #3b2a14; --alert: #c45a2a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: var(--bg); color: var(--fg-dim); 
+            font-family: "Lucida Console", monospace; font-size: 12px; padding: 20px; overflow: hidden;
+        }
+        .monitor-frame { max-width: 600px; margin: 0 auto; border: 1px solid var(--line); padding: 20px; position: relative; }
+        
+        #proximity-display {
+            text-align: center; padding: 30px; border: 1px double var(--line); margin-bottom: 15px;
+            background: radial-gradient(circle, rgba(214, 161, 92, 0.05) 0%, transparent 70%);
+        }
+        .dist-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+        #dist-val { font-size: 2.5rem; color: var(--fg); display: block; margin: 10px 0; }
+        
+        #read-only-log {
+            height: 180px; border-top: 1px solid var(--line); padding-top: 10px;
+            overflow-y: auto; font-size: 10px; color: var(--fg-dim); opacity: 0.7;
+            scrollbar-width: none;
+        }
+        #read-only-log::-webkit-scrollbar { display: none; }
+        .log-entry { border-bottom: 1px solid #1a150e; padding: 4px 0; font-family: inherit; }
+        
+        .scanline {
+            width: 100%; height: 2px; background: rgba(214, 161, 92, 0.08);
+            position: absolute; top: 0; left: 0; pointer-events: none;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
+        
+        #init-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 200; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-sys {
+            background: transparent; border: 1px solid var(--fg); color: var(--fg);
+            padding: 15px 25px; cursor: pointer; font-family: inherit; text-transform: uppercase;
+        }
+        .btn-sys:hover { background: var(--fg); color: var(--bg); }
+    </style>
+</head>
+<body>
+
+<div id="init-overlay">
+    <button class="btn-sys" id="btn-sync">SINCRONIZAR CON EL ORIGEN</button>
+</div>
+
+<div class="monitor-frame">
+    <div class="scanline"></div>
+    <div class="dist-label">DISTANCIA AL NODO MAESTRO</div>
+    
+    <div id="proximity-display">
+        <span id="dist-val">--- m</span>
+        <div id="status-text" style="font-size: 9px;">BUSCANDO SEÑAL GEODÉSICA...</div>
+    </div>
+
+    <div style="font-size: 9px; margin-bottom: 5px; color: var(--fg);">LOG DE RASTREO (SYNC_READ_ONLY)</div>
+    <div id="read-only-log"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+        authDomain: "technodrone-ce06d.firebaseapp.com",
+        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+        projectId: "technodrone-ce06d",
+        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    let masterCoords = null;
+    let visitorCoords = null;
+    let oscillators = {};
+    let masterGain;
+
+    // C#m(add9, no5) Harmonic Set
+    const FREQS = {
+        root: 138.59,    // C#3 (The constant)
+        third: 164.81,   // E3  (The melancholy)
+        seventh: 246.94, // B3  (The almost-resolution)
+        ninth: 311.13    // D#4 (The tension/sweetness)
+    };
+
+    function setupAudio() {
+        masterGain = audioCtx.createGain();
+        masterGain.connect(audioCtx.destination);
+        masterGain.gain.value = 0.15;
+
+        Object.entries(FREQS).forEach(([key, freq]) => {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            
+            osc.type = (key === 'root') ? 'sawtooth' : 'sine';
+            osc.frequency.value = freq;
+            
+            // Start with only Root and Third audible
+            g.gain.value = (key === 'root' || key === 'third') ? 0.4 : 0;
+            
+            osc.connect(g);
+            g.connect(masterGain);
+            osc.start();
+            oscillators[key] = g;
+        });
+    }
+
+    function updateMusicalProximity(distance) {
+        if (!oscillators.root) return;
+
+        // Tension scales as distance closes (max tension at 0m, fades by 1500m)
+        const tension = Math.max(0, 1 - (distance / 1500));
+        
+        // Swell the 7th and 9th
+        oscillators.seventh.gain.setTargetAtTime(tension * 0.5, audioCtx.currentTime, 0.5);
+        oscillators.ninth.gain.setTargetAtTime(tension * 0.7, audioCtx.currentTime, 0.5);
+        
+        // Subtle instability on the root as closeness increases
+        const detune = (1 - tension) * 2; 
+        oscillators.root.gain.value = 0.4 + (tension * 0.1);
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; 
+        const dLat = (lat2-lat1) * Math.PI/180;
+        const dLon = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    document.getElementById('btn-sync').addEventListener('click', () => {
+        audioCtx.resume();
+        setupAudio();
+        document.getElementById('init-overlay').style.display = 'none';
+        
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(pos => {
+                visitorCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                calculate();
+            });
+        }
+    });
+
+    onValue(ref(db, 'system_status/master_pos'), (snap) => {
+        masterCoords = snap.val();
+        calculate();
+    });
+
+    onChildAdded(ref(db, 'geo_trace'), (snap) => {
+        const data = snap.val();
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.textContent = `[TRACE] LAT: ${data.lat.toFixed(4)} | LNG: ${data.lng.toFixed(4)}`;
+        const log = document.getElementById('read-only-log');
+        log.prepend(entry);
+    });
+
+    function calculate() {
+        if (!masterCoords || !visitorCoords) return;
+        const d = getDistance(visitorCoords.lat, visitorCoords.lng, masterCoords.lat, masterCoords.lng);
+        document.getElementById('dist-val').innerText = `${Math.round(d)} m`;
+        document.getElementById('status-text').innerText = d < 20 ? "INTERSECCIÓN LOGRADA" : "PROXIMIDAD ACTIVA";
+        updateMusicalProximity(d);
+    }
+</script>
+</body>
+</html>

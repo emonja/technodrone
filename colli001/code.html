@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NODE://COLLI_SIGNAL_GEN</title>
+    <style>
+        :root {
+            --bg: #000;
+            --dim-text: #222; 
+            --active-text: #444;
+            --rebel-pink: #fe7eaf; 
+            --glow-pink: rgba(254, 126, 175, 0.4);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--active-text);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            /* Allow scrolling if content is taller than screen */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Start from top to allow scrolling */
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: calc(env(safe-area-inset-top) + 60px) 20px 40px 20px;
+            box-sizing: border-box;
+        }
+
+        /* Scanline layer */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.08) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .nav-wrapper {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 20px);
+            right: 25px;
+            z-index: 101;
+        }
+        .nav-return { 
+            text-decoration: none; 
+            color: var(--dim-text); 
+            font-size: 10px; 
+            letter-spacing: 2px;
+        }
+
+        .directive-frame {
+            border-left: 1px solid #111;
+            border-right: 1px solid #111;
+            padding: 20px 40px;
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+
+        .header-tag {
+            font-size: 9px;
+            color: var(--dim-text);
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        #pulsarSVG {
+            width: 100%;
+            max-height: 50vh; /* Prevents SVG from taking up too much vertical space */
+            filter: drop-shadow(0 0 5px var(--glow-pink));
+            margin-bottom: 20px;
+            transition: opacity 0.05s;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            border-top: 1px solid #0a0a0a;
+            padding-top: 20px;
+        }
+
+        /* Mobile adjustment for grid */
+        @media (max-width: 480px) {
+            .controls-grid { grid-template-columns: 1fr; }
+            .control-group { grid-column: span 1 !important; }
+        }
+
+        .control-group { display: flex; flex-direction: column; text-align: left; }
+        label { font-size: 8px; color: var(--dim-text); margin-bottom: 5px; letter-spacing: 1px; }
+        
+        input[type=range] {
+            appearance: none;
+            background: #111;
+            height: 2px;
+            width: 100%;
+            outline: none;
+            margin: 10px 0;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px; height: 12px;
+            background: var(--rebel-pink);
+            cursor: pointer;
+        }
+
+        .action-bar { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        button {
+            background: transparent;
+            border: 1px solid #222;
+            color: var(--active-text);
+            padding: 10px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover, button.active { border-color: var(--rebel-pink); color: var(--rebel-pink); }
+    </style>
+</head>
+<body>
+
+    <div class="nav-wrapper">
+        <a href="../index.html" class="nav-return">//BACK_TO_ROOT</a>
+    </div>
+
+    <div class="directive-frame">
+        <div class="header-tag">COLLI_SIGNAL_ANALYSIS</div>
+        
+        <svg id="pulsarSVG" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg"></svg>
+
+        <div class="controls-grid">
+            <div class="control-group"><label>SIGNAL_DENSITY</label><input type="range" id="count" min="10" max="100" value="45"></div>
+            <div class="control-group"><label>COLLI_AMP</label><input type="range" id="height" min="10" max="180" value="70"></div>
+            <div class="control-group"><label>CHAOS_JITTER</label><input type="range" id="chaos" min="0" max="50" value="12"></div>
+            <div class="control-group"><label>WIDTH_ENV</label><input type="range" id="width" min="10" max="120" value="60"></div>
+            <div class="control-group" style="grid-column: span 2;"><label>PULSE_BPM_SYNC</label><input type="range" id="shift" min="30" max="220" value="60"></div>
+        </div>
+
+        <div class="action-bar">
+            <button id="audioBtn" onclick="toggleAudio()">INITIALIZE_SONIC_CORE</button>
+            <button onclick="downloadSVG()">EXTRACT_VECTOR.SVG</button>
+        </div>
+    </div>
+
+    <script>
+        // ... (All previous script logic preserved perfectly) ...
+        const svg = document.getElementById('pulsarSVG');
+        const inputs = ['count', 'height', 'chaos', 'width', 'shift'].map(id => document.getElementById(id));
+        let audioCtx, osc, noiseGain, pedalOsc, pedalGain, audioActive = false;
+        const colliScale = [110.00, 123.47, 130.81, 146.83, 164.81, 185.00, 196.00, 220.00];
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            osc = audioCtx.createOscillator(); osc.type = 'sine';
+            const oGain = audioCtx.createGain(); oGain.gain.value = 0.1;
+            pedalOsc = audioCtx.createOscillator(); pedalOsc.type = 'triangle';
+            pedalOsc.frequency.value = 55.00;
+            pedalGain = audioCtx.createGain(); pedalGain.gain.value = 0.05;
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) { data[i] = (Math.random() * 2 - 1) * 0.05; }
+            const nSrc = audioCtx.createBufferSource(); nSrc.buffer = noiseBuffer; nSrc.loop = true;
+            noiseGain = audioCtx.createGain(); noiseGain.gain.value = 0;
+            osc.connect(oGain).connect(audioCtx.destination);
+            pedalOsc.connect(pedalGain).connect(audioCtx.destination);
+            nSrc.connect(noiseGain).connect(audioCtx.destination);
+            osc.start(); pedalOsc.start(); nSrc.start();
+        }
+
+        function toggleAudio() {
+            if (!audioCtx) { initAudio(); startPulse(); }
+            audioActive = !audioActive;
+            if (audioActive) { audioCtx.resume(); document.getElementById('audioBtn').classList.add('active'); updateAudio(); }
+            else { audioCtx.suspend(); document.getElementById('audioBtn').classList.remove('active'); }
+        }
+
+        function startPulse() {
+            const beat = () => {
+                if (audioActive) {
+                    const bpm = parseFloat(document.getElementById('shift').value);
+                    svg.style.opacity = "0.6";
+                    pedalGain.gain.setTargetAtTime(0.15, audioCtx.currentTime, 0.01);
+                    setTimeout(() => { svg.style.opacity = "1"; }, 50);
+                    pedalGain.gain.setTargetAtTime(0.05, audioCtx.currentTime + 0.1, 0.05);
+                    setTimeout(beat, 60000 / bpm);
+                } else { setTimeout(beat, 100); }
+            };
+            beat();
+        }
+
+        function updateAudio() {
+            if (!audioActive) return;
+            const scaleIdx = Math.floor((parseFloat(inputs[1].value) / 180) * (colliScale.length - 1));
+            osc.frequency.setTargetAtTime(colliScale[scaleIdx], audioCtx.currentTime, 0.1);
+            noiseGain.gain.setTargetAtTime(parseFloat(inputs[2].value) / 300, audioCtx.currentTime, 0.1);
+        }
+
+        function draw() {
+            svg.innerHTML = '';
+            const [count, height, chaos, width, shift] = inputs.map(i => parseFloat(i.value));
+            for (let i = 0; i < count; i++) {
+                const y = 80 + (i * 350 / count);
+                const center = 200 + (Math.random() - 0.5) * (shift / 10);
+                let pts = [];
+                for (let j = 0; j <= 80; j++) {
+                    let x = 40 + (j * 320 / 80);
+                    let env = Math.exp(-Math.pow((x - center) / width, 2));
+                    let yP = y - (height * env) + (Math.random() - 0.5) * chaos * env;
+                    pts.push(`${x},${yP}`);
+                }
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", `M 40,${y} L ` + pts.join(' L ') + ` L 360,${y} Z`);
+                path.setAttribute("fill", "#000"); path.setAttribute("stroke", "#fe7eaf"); path.setAttribute("stroke-width", "0.8");
+                svg.appendChild(path);
+            }
+            if (audioActive) updateAudio();
+        }
+
+        function downloadSVG() {
+            const blob = new Blob([svg.outerHTML], {type: "image/svg+xml"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `colli_signal_${Date.now()}.svg`;
+            a.click();
+        }
+
+        inputs.forEach(i => i.addEventListener('input', draw));
+        draw();
+    </script>
+</body>
+</html>

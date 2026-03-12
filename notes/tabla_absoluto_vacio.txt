@@ -1,0 +1,66 @@
+Perfecto.
+Lo dejamos **locked**.
+
+Ahora vamos a la tabla relacional.
+No como comparación superficial, sino como mapa estructural.
+
+---
+
+# Tabla Relacional
+
+## Absoluto — Vacío — Sistema
+
+| Eje              | Karel Čapek — *La fábrica de absoluto* | Yves Klein — *Le Vide*            | Technodrone — Sistemas de creación         |
+| ---------------- | -------------------------------------- | --------------------------------- | ------------------------------------------ |
+| Operación        | Desintegrar materia                    | Vaciar espacio                    | Configurar sistema                         |
+| Método           | Compresión técnica extrema             | Sustracción total                 | Activación relacional                      |
+| Resultado        | Liberación del “Absoluto”              | Intensificación del vacío         | Emergencia de comportamiento               |
+| Energía          | Extraída de la materia                 | Latente en el espacio             | Redistribuida en el campo                  |
+| Espíritu         | Residuo metafísico no controlable      | Presencia inmaterial              | Excedente sistémico                        |
+| Control          | La máquina pierde control del efecto   | El artista cede protagonismo      | El autor diseña condiciones, no resultados |
+| Espacio          | Escenario afectado por lo liberado     | Campo cargado por ausencia        | Variable activa                            |
+| Tiempo           | Consecuencia histórica y social        | Suspensión perceptiva             | Fricción entre estados                     |
+| Riesgo           | Fanatismo, expansión incontrolable     | Incomprensión, invisibilidad      | Inestabilidad del sistema                  |
+| Ontología        | La materia contiene esencia            | El vacío contiene intensidad      | La relación contiene potencial             |
+| Termodinámica    | Energía perfecta → exceso espiritual   | Sustracción → densidad perceptiva | Activación → entropía sensible             |
+| Tipo de Absoluto | Liberado por ruptura                   | Revelado por sustracción          | Emergente por interacción                  |
+
+---
+
+## Estructura profunda compartida
+
+Los tres comparten un gesto estructural:
+
+1. Existe algo latente.
+2. Se altera una condición.
+3. Surge un excedente no previsto.
+4. El control se vuelve relativo.
+
+Pero difieren en el vector:
+
+* Čapek → exceso por hiper-eficiencia.
+* Klein → intensidad por vacío.
+* Tú → emergencia por sistema.
+
+---
+
+Si lo miramos en términos de ecuación conceptual:
+
+* Čapek:
+  Materia – estabilidad = Absoluto
+
+* Klein:
+  Objeto – presencia física = Intensidad
+
+* Tú:
+  Control – determinación = Comportamiento emergente
+
+---
+
+Si quieres, podemos hacer ahora:
+
+* Una versión visual-diagramática (casi como blueprint conceptual).
+* O una lectura más termodinámica rigurosa.
+* O integrar esta tabla como apéndice teórico dentro de tu proyecto general.
+
+¿La siguiente capa la hacemos más filosófica o más estructural?

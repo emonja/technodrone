@@ -3,209 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>NODE://LICHTUNG</title>
+    <title>NODE://LICHTUNG_SQUARE — MORNING_STATE</title>
     <style>
         :root {
-            --bg: #05070a;
-            --water: #1a1f26;
-            --object-color: #fe7eaf;
-            --ripple-color: rgba(254, 126, 175, 0.3);
+            --bg: #000;
+            --active: #fe7eaf;
+            --dim: #111;
         }
 
         body {
             background-color: var(--bg);
-            color: var(--object-color);
+            color: var(--active);
             font-family: 'Courier New', monospace;
             margin: 0;
             height: 100vh;
-            width: 100vw;
             overflow: hidden;
             touch-action: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
+            opacity: 0;
+            animation: fadeIn 60s forwards;
         }
 
-        /* Nav */
-        .nav-wrapper {
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* The "Pond" Grid */
+        #grid-overlay {
             position: fixed;
-            top: calc(env(safe-area-inset-top) + 20px);
-            right: 20px;
-            z-index: 1000;
-        }
-        .nav-return {
-            text-decoration: none;
-            color: #333;
-            font-size: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(var(--dim) 1px, transparent 1px),
+                linear-gradient(90deg, var(--dim) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.3;
+            pointer-events: none;
         }
 
-        /* The Pond Surface */
-        #surface {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 30%;
-            border-top: 1px solid #111;
-            background: linear-gradient(to bottom, #080a0f, #000);
-            z-index: 5;
-        }
-
-        /* Falling Objects */
         .object {
             position: absolute;
-            font-size: 12px;
-            white-space: nowrap;
-            user-select: none;
-            filter: blur(0.5px);
-            z-index: 2;
+            font-size: 10px;
+            background: var(--bg);
+            border: 1px solid var(--active);
+            padding: 2px 5px;
+            z-index: 10;
         }
 
-        /* Ripples */
-        .ripple {
+        /* Square Wave Ripples — now with color shift */
+        .sq-ripple {
             position: absolute;
-            border: 1px solid var(--ripple-color);
-            border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            animation: expand 3s cubic-bezier(0, 0.3, 0.5, 1) forwards;
+            border: 1px solid var(--active);
+            transform: translate(-50%, -50%);
             pointer-events: none;
-            z-index: 6;
+            opacity: 0.8;
+            animation: 
+                pulse-sq 2s ease-out forwards,
+                colorShift 60s linear forwards;
         }
 
-        @keyframes expand {
-            to {
-                transform: translate(-50%, -50%) scale(4);
-                opacity: 0;
-            }
+        @keyframes pulse-sq {
+            0%   { width: 0; height: 0; opacity: 1; border-width: 4px; }
+            100% { width: 400px; height: 400px; opacity: 0; border-width: 1px; }
+        }
+
+        @keyframes colorShift {
+            0%   { border-color: hsl(350, 100%, 70%); } /* pink dawn */
+            50%  { border-color: hsl(40, 100%, 80%); }  /* golden morning */
+            100% { border-color: hsl(60, 80%, 90%); }   /* clear light */
         }
 
         header {
             position: fixed;
-            top: 40px;
+            top: 25px;
             left: 25px;
-            font-size: 10px;
-            color: #222;
-            letter-spacing: 4px;
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: #444;
+            z-index: 100;
         }
 
-        #instructions {
-            position: fixed;
-            bottom: 40px;
-            width: 100%;
-            text-align: center;
-            font-size: 9px;
-            color: #1a1a1a;
-            letter-spacing: 2px;
-            z-index: 10;
+        /* Mobile / performance */
+        @media (max-width: 600px) {
+            .sq-ripple { animation-duration: 1.8s; }
         }
     </style>
 </head>
 <body>
 
-    <div class="nav-wrapper">
-        <a href="../index.html" class="nav-return">//BACK_TO_ROOT</a>
-    </div>
-
-    <header>NODE://LICHTUNG_v.01 <br> <span id="clock">00:00:00</span></header>
-    
-    <div id="surface"></div>
-    <div id="instructions">TAP_SURFACE_TO_DISTURB_THE_VOID</div>
+    <div id="grid-overlay"></div>
+    <header>ARCHIVE_LIQUID_STATE // MORNING_STATE // BIT_DEPTH: 1</header>
 
     <script>
-        const surface = document.getElementById('surface');
-        const clockEl = document.getElementById('clock');
-        const objects = ["<VOID>", "{DATA}", "0101", "[]", "NULL", "//", "???", "•"];
-        
-        // Audio Setup
+        const symbols = ["■", "▰", "▣", "□", "▲", "▼"];
         let audioCtx;
+
         function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        function playPing(freq, decay) {
+        function playSquareTone(freq) {
             initAudio();
+            
+            // Main square wave (harsh)
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
-            osc.type = 'sine';
+            osc.type = 'square';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
-            
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
             osc.start();
-            osc.stop(audioCtx.currentTime + decay);
+            osc.stop(audioCtx.currentTime + 0.5);
+
+            // Lingering harmonic tail (sine, 8 s decay)
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(freq * 1.5, audioCtx.currentTime); // octave + fifth-ish
+            gain2.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 8);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 8);
         }
 
-        function createObject(x, y = -50) {
+        function createSquareRipple(x, y) {
+            const count = 3;
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const r = document.createElement('div');
+                    r.className = 'sq-ripple';
+                    r.style.left = x + 'px';
+                    r.style.top = y + 'px';
+                    document.body.appendChild(r);
+
+                    playSquareTone(100 + (i * 50));
+
+                    setTimeout(() => r.remove(), 5000);
+                }, i * 200);
+            }
+        }
+
+        window.addEventListener('pointerdown', (e) => {
             const obj = document.createElement('div');
             obj.className = 'object';
-            obj.innerText = objects[Math.floor(Math.random() * objects.length)];
-            obj.style.left = x + 'px';
-            obj.style.top = y + 'px';
+            obj.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+            obj.style.left = e.clientX + 'px';
+            obj.style.top = e.clientY + 'px';
             document.body.appendChild(obj);
 
-            const duration = 2000 + Math.random() * 3000;
-            const targetY = window.innerHeight * 0.7; // Hits the "pond"
-
-            const animation = obj.animate([
-                { top: y + 'px', opacity: 1 },
-                { top: targetY + 'px', opacity: 1 }
-            ], {
-                duration: duration,
-                easing: 'ease-in'
-            });
-
-            animation.onfinish = () => {
-                createRipple(x, targetY);
+            // Extended linger + gentle sink
+            obj.animate([
+                { transform: 'scale(1)', opacity: 1 },
+                { transform: 'scale(0.3) rotate(45deg)', opacity: 0 }
+            ], { duration: 4000, easing: 'ease-in-out' }).onfinish = () => {
+                createSquareRipple(e.clientX, e.clientY);
                 obj.remove();
             };
-        }
-
-        function createRipple(x, y) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            // Perspective flattening
-            const size = 50 + Math.random() * 100;
-            ripple.style.width = size + 'px';
-            ripple.style.height = (size * 0.3) + 'px'; 
-            
-            document.body.appendChild(ripple);
-            
-            // Audio trigger based on X position (stereo feel)
-            const frequency = 200 + (x / window.innerWidth) * 800;
-            playPing(frequency, 2);
-
-            setTimeout(() => ripple.remove(), 3000);
-        }
-
-        // Automatic falling objects
-        setInterval(() => {
-            if (Math.random() > 0.7) {
-                createObject(Math.random() * window.innerWidth);
-            }
-        }, 1500);
-
-        // User interaction
-        window.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            createObject(touch.clientX, touch.clientY - 20);
-        });
-
-        // Simple Clock
-        setInterval(() => {
-            const now = new Date();
-            clockEl.innerText = now.toTimeString().split(' ')[0];
-        }, 1000);
-
+        }, { passive: true });
     </script>
 </body>
 </html>

@@ -1,0 +1,45 @@
+
+---
+
+# TECHNODRONE
+
+## COROLARIOS OPERATIVOS
+
+1. Si la obra es comportamiento, entonces no puede fijarse como objeto definitivo.
+
+2. Si el sistema precede al evento, entonces el diseño es estructural, no formal.
+
+3. Si la estabilidad permite fluctuación, entonces toda pieza debe contener margen de indeterminación.
+
+4. Si el control absoluto anula la emergencia, entonces el sistema debe incluir zonas no determinadas.
+
+5. Si la indeterminación absoluta anula el sistema, entonces debe existir arquitectura persistente.
+
+6. Si el medio es condición de aparición, entonces modificar el medio modifica ontológicamente la obra.
+
+7. Si el vacío es latencia estructurada, entonces el silencio, la pausa y la suspensión son variables activas.
+
+8. Si toda activación redistribuye energía, entonces cada participante altera el campo total.
+
+9. Si la entropía es transformación de orden, entonces el desgaste, la saturación y la acumulación son material compositivo.
+
+10. Si el tiempo se fricciona entre estados, entonces la obra es transición, no duración.
+
+11. Si la técnica es condición estructural, entonces el dispositivo nunca es neutral.
+
+12. Si la estructura es lo inamovible que cambia, entonces el proyecto no busca permanencia, sino continuidad dinámica.
+
+13. Si el sistema es claro, entonces la función del proyecto es abrir condiciones de aparición, no representar contenidos.
+
+14. Si el evento altera el campo, entonces cada activación deja huella estructural.
+
+15. Si la obra es campo alterado, entonces su límite no coincide con sus bordes físicos.
+
+---
+
+
+
+* Derivar “Protocolos” (cómo se construye una pieza Technodrone).
+* O escribir “Condiciones mínimas para que algo sea Technodrone”.
+* O cerrar el conjunto con una sola proposición sintética que condense Axiomas + Corolarios.
+

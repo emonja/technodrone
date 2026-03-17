@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STL VIEW</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({ antialias: true });
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000); // pure black
+document.body.appendChild(renderer.domElement);
+
+// CAMERA
+camera.position.set(0, 0, 100);
+
+// CONTROLS (rotate, zoom, pan)
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// LOAD STL
+const loader = new THREE.STLLoader();
+loader.load('golfer.stl', function (geometry) {
+
+    geometry.center();
+
+    const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,   // pure white object
+        wireframe: false   // set true if you want wireframe look
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+});
+
+// AUTO ROTATE (optional)
+let autoRotate = true;
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    if (autoRotate && scene.children.length > 0) {
+        scene.children[0].rotation.y += 0.005;
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+animate();
+
+// RESPONSIVE
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SEHNSUCHT FIELD // TOPO VIEW</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b0a07;
+    overflow:hidden;
+}
+canvas{
+    display:block;
+    cursor:grab;
+}
+canvas:active{
+    cursor:grabbing;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="c"></canvas>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+//// FIREBASE
+const firebaseConfig = {
+apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+authDomain: "technodrone-ce06d.firebaseapp.com",
+databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+projectId: "technodrone-ce06d",
+appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+//// CANVAS
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+//// VIEW CONTROL
+let offsetX = 0;
+let offsetY = 0;
+let scale = 1;
+
+let isDragging = false;
+let lastX = 0;
+let lastY = 0;
+
+let lastInteraction = 0;
+
+canvas.addEventListener("mousedown",(e)=>{
+    isDragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastInteraction = Date.now();
+});
+
+window.addEventListener("mouseup",()=> isDragging = false);
+
+window.addEventListener("mousemove",(e)=>{
+    if(!isDragging) return;
+
+    offsetX += (e.clientX - lastX);
+    offsetY += (e.clientY - lastY);
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    lastInteraction = Date.now();
+});
+
+canvas.addEventListener("wheel",(e)=>{
+    e.preventDefault();
+
+    const zoom = Math.exp(-e.deltaY * 0.001);
+    scale *= zoom;
+
+    scale = Math.max(0.1, Math.min(10, scale));
+
+    lastInteraction = Date.now();
+});
+
+//// DATA
+let points = [];
+let visits = [];
+
+let prev = null;
+let x = 0;
+let y = 0;
+
+const scaleGeo = 10000;
+
+//// PRIMARY TRACE
+onChildAdded(ref(db,"geo_trace"),(data)=>{
+
+    const p = data.val();
+
+    if(prev){
+
+        const dx = (p.lng - prev.lng) * scaleGeo;
+        const dy = (p.lat - prev.lat) * scaleGeo;
+
+        x += dx;
+        y -= dy;
+
+        points.push({x,y});
+    }
+
+    prev = p;
+
+});
+
+//// VISITS
+onChildAdded(ref(db,"visits"),(data)=>{
+
+    const p = data.val();
+
+    if(prev){
+
+        const dx = (p.lng - prev.lng) * scaleGeo;
+        const dy = (p.lat - prev.lat) * scaleGeo;
+
+        visits.push({
+            x: x + dx + (Math.random()-0.5)*3,
+            y: y - dy + (Math.random()-0.5)*3,
+            t: Date.now()
+        });
+    }
+
+});
+
+//// AUTO FIT (ZOOM + PAN)
+function autoFit(){
+
+    if(points.length < 2) return;
+
+    let minX=Infinity, maxX=-Infinity;
+    let minY=Infinity, maxY=-Infinity;
+
+    points.forEach(p=>{
+        if(p.x<minX) minX=p.x;
+        if(p.x>maxX) maxX=p.x;
+        if(p.y<minY) minY=p.y;
+        if(p.y>maxY) maxY=p.y;
+    });
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    const margin = 100;
+
+    const targetScale = Math.min(
+        (canvas.width - margin) / (width || 1),
+        (canvas.height - margin) / (height || 1)
+    );
+
+    // target center (keep structure centered)
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    const now = Date.now();
+    const idleTime = now - lastInteraction;
+
+    // ⏳ grace period
+    if(idleTime < 2000) return;
+
+    // 🐢 → 🚀 exponential influence
+    const t = Math.min(idleTime / 5000, 1);
+    const influence = Math.pow(t, 3);
+
+    //// SCALE (zoom)
+    scale += (targetScale - scale) * (0.01 + influence * 0.05);
+
+    //// OFFSET (pan correction)
+    const targetOffsetX = -centerX * scale;
+    const targetOffsetY = -centerY * scale;
+
+    offsetX += (targetOffsetX - offsetX) * (0.01 + influence * 0.05);
+    offsetY += (targetOffsetY - offsetY) * (0.01 + influence * 0.05);
+}
+
+//// DRAW
+function draw(){
+
+    requestAnimationFrame(draw);
+
+    ctx.fillStyle = "rgba(11,10,7,0.2)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.save();
+
+    ctx.translate(canvas.width/2 + offsetX, canvas.height/2 + offsetY);
+    ctx.scale(scale, scale);
+
+    //// PRIMARY LINE
+    ctx.strokeStyle = "#ff4e00";
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+
+    for(let i=1;i<points.length;i++){
+        ctx.moveTo(points[i-1].x, points[i-1].y);
+        ctx.lineTo(points[i].x, points[i].y);
+    }
+
+    ctx.stroke();
+
+    //// PRIMARY POINTS
+    points.forEach(p=>{
+        ctx.fillStyle = "#ff4e00";
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 0.8, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    //// VISITS (BREATHING)
+    const time = Date.now()*0.002;
+
+    visits.forEach((v,i)=>{
+
+        const pulse = Math.sin(time + i*0.3)*1.2;
+
+        ctx.globalAlpha = 0.5 + Math.sin(time)*0.1;
+        ctx.fillStyle = "#ffb97a";
+
+        ctx.beginPath();
+        ctx.arc(v.x + pulse, v.y + pulse, 1.2, 0, Math.PI*2);
+        ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    autoFit();
+}
+
+draw();
+
+</script>
+
+</body>
+</html>

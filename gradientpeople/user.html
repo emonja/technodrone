@@ -21,6 +21,7 @@ body{
     justify-content:center;
     height:100vh;
     overflow:hidden;
+    transition: background 0.1s linear;
 }
 #label{
     font-size:80px;
@@ -79,7 +80,7 @@ const joinBtn = document.getElementById("join");
 let taps = [];
 let bpm = 0;
 
-// UI add
+// TAP BUTTON
 const tapBtn = document.createElement("div");
 tapBtn.innerText = "TAP";
 tapBtn.style.position = "absolute";
@@ -163,7 +164,17 @@ onValue(ref(db,"system/frame"), (snap)=>{
     currentColor = frame[mySlot] || "#000000";
 });
 
-// ANIMATION LOOP (SMOOTH PULSE)
+// HELPER: HEX → RGB
+function hexToRgb(hex){
+    const bigint = parseInt(hex.slice(1),16);
+    return {
+        r:(bigint>>16)&255,
+        g:(bigint>>8)&255,
+        b:bigint&255
+    };
+}
+
+// ANIMATION LOOP (BACKGROUND PULSE ONLY)
 function animate(){
     requestAnimationFrame(animate);
 
@@ -175,17 +186,21 @@ function animate(){
     const t = performance.now() / 1000;
     const freq = bpm / 60;
 
-    // smooth sine pulse 0–1
+    // smooth pulse
     const pulse = (Math.sin(t * freq * Math.PI * 2) + 1) / 2;
 
-    // shape it (soft attack, sharper decay)
+    // shaped envelope
     const shaped = Math.pow(pulse, 2);
 
-    const intensity = 0.2 + shaped * 0.8;
+    const base = hexToRgb(currentColor);
 
-    // apply brightness
-    document.body.style.background = currentColor;
-    document.body.style.filter = `brightness(${intensity})`;
+    const intensity = 0.3 + shaped * 0.9;
+
+    const r = Math.min(255, base.r * intensity);
+    const g = Math.min(255, base.g * intensity);
+    const b = Math.min(255, base.b * intensity);
+
+    document.body.style.background = `rgb(${r}, ${g}, ${b})`;
 }
 
 animate();

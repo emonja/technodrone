@@ -21,7 +21,6 @@ body{
     justify-content:center;
     height:100vh;
     overflow:hidden;
-    transition: background 0.1s linear;
 }
 #label{
     font-size:80px;
@@ -52,7 +51,7 @@ body{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction, onDisconnect } 
+import { getDatabase, ref, onValue, runTransaction, onDisconnect, set } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -104,9 +103,18 @@ tapBtn.onclick = () => {
         }
         const avg = intervals.reduce((a,b)=>a+b,0) / intervals.length;
         bpm = 60000 / avg;
-    }
 
-    statusEl.innerText = "BPM: " + bpm.toFixed(1);
+        // WRITE BPM TO FIREBASE
+        if (mySlot !== null){
+            set(ref(db, `devices/${deviceId}`), {
+                bpm: bpm,
+                slot: mySlot,
+                last_update: Date.now()
+            });
+        }
+
+        statusEl.innerText = "BPM: " + bpm.toFixed(1);
+    }
 };
 
 // JOIN
@@ -154,7 +162,7 @@ onValue(ref(db,"slots"), (snap)=>{
     }
 });
 
-// FRAME
+// FRAME (COLOR)
 let currentColor = "#000000";
 
 onValue(ref(db,"system/frame"), (snap)=>{
@@ -164,7 +172,7 @@ onValue(ref(db,"system/frame"), (snap)=>{
     currentColor = frame[mySlot] || "#000000";
 });
 
-// HELPER: HEX → RGB
+// COLOR PULSE
 function hexToRgb(hex){
     const bigint = parseInt(hex.slice(1),16);
     return {
@@ -174,7 +182,6 @@ function hexToRgb(hex){
     };
 }
 
-// ANIMATION LOOP (BACKGROUND PULSE ONLY)
 function animate(){
     requestAnimationFrame(animate);
 
@@ -186,10 +193,7 @@ function animate(){
     const t = performance.now() / 1000;
     const freq = bpm / 60;
 
-    // smooth pulse
     const pulse = (Math.sin(t * freq * Math.PI * 2) + 1) / 2;
-
-    // shaped envelope
     const shaped = Math.pow(pulse, 2);
 
     const base = hexToRgb(currentColor);

@@ -27,21 +27,21 @@ body{
     border:1px solid var(--line);
     padding:10px;
     text-align:center;
-    font-size:14px;
 }
 .controls{
     display:flex;
     gap:10px;
-}
-input{
-    flex:1;
+    margin-bottom:10px;
 }
 button{
-    background:none;
     border:1px solid var(--fg);
+    background:none;
     color:var(--fg);
     padding:10px;
     cursor:pointer;
+}
+input{
+    flex:1;
 }
 </style>
 </head>
@@ -55,19 +55,22 @@ button{
     <input type="color" id="c1" value="#ff0000">
     <input type="color" id="c2" value="#0000ff">
 </div>
-<br>
-<button onclick="sendGradient()">APPLY GRADIENT</button>
+
+<div class="controls">
+    <button onclick="sendGradient()">APPLY GRADIENT</button>
+    <button onclick="resetGrid()">RESET GRID</button>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, set } 
+import { getDatabase, ref, onValue, set, remove } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDX...",
+  apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
   authDomain: "technodrone-ce06d.firebaseapp.com",
   databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
-  projectId: "technodrone-ce06d",
+  projectId: "technodrone-ce06d"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -75,7 +78,7 @@ const db = getDatabase(app);
 
 const gridEl = document.getElementById("grid");
 
-// SHOW GRID STATUS
+// GRID VIEW
 onValue(ref(db,"slots"), (snap)=>{
     const slots = snap.val() || {};
     gridEl.innerHTML = "";
@@ -94,7 +97,13 @@ onValue(ref(db,"slots"), (snap)=>{
     }
 });
 
-// GRADIENT GENERATOR
+// RESET GRID
+window.resetGrid = function(){
+    remove(ref(db,"slots"));
+    remove(ref(db,"system/frame"));
+};
+
+// GRADIENT
 window.sendGradient = function(){
     const c1 = document.getElementById("c1").value;
     const c2 = document.getElementById("c2").value;

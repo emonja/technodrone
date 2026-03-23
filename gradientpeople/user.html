@@ -28,9 +28,16 @@ body{
     color:var(--accent);
     text-shadow:0 0 20px rgba(254,126,175,0.5);
 }
+#join{
+    position:absolute;
+    bottom:40px;
+    border:1px solid var(--active);
+    padding:12px 20px;
+    cursor:pointer;
+}
 #status{
     position:absolute;
-    bottom:20px;
+    bottom:10px;
     font-size:10px;
     color:var(--dim);
 }
@@ -39,71 +46,85 @@ body{
 <body>
 
 <div id="label">--</div>
-<div id="status">CONNECTING...</div>
+<div id="join">JOIN GRID</div>
+<div id="status">IDLE</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, runTransaction, onDisconnect } 
+import { getDatabase, ref, onValue, runTransaction, onDisconnect, remove } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDX...",
+  apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
   authDomain: "technodrone-ce06d.firebaseapp.com",
   databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
-  projectId: "technodrone-ce06d",
+  projectId: "technodrone-ce06d"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// IDENTITY
+// identity
 const deviceId = localStorage.getItem("node_id") || crypto.randomUUID();
 localStorage.setItem("node_id", deviceId);
 
+let mySlot = null;
+let joined = false;
+
 const labelEl = document.getElementById("label");
 const statusEl = document.getElementById("status");
+const joinBtn = document.getElementById("join");
 
-let mySlot = null;
+// JOIN BUTTON
+joinBtn.onclick = () => {
+    if (joined) return;
 
-// SLOT CLAIM
-runTransaction(ref(db, "slots"), (slots) => {
-    if (!slots) slots = {};
-    for (let i=0;i<16;i++){
-        if (!slots[i]){
-            slots[i] = deviceId;
-            return slots;
+    runTransaction(ref(db, "slots"), (slots) => {
+        if (!slots) slots = {};
+        for (let i=0;i<16;i++){
+            if (!slots[i]){
+                slots[i] = deviceId;
+                return slots;
+            }
         }
-    }
-});
+    });
 
-// CLEANUP
-onDisconnect(ref(db, `slots/${mySlot}`)).remove();
+    joined = true;
+    statusEl.innerText = "REQUESTING_SLOT...";
+};
 
-// LISTEN SLOT
-onValue(ref(db, "slots"), (snap)=>{
+// LISTEN SLOTS
+onValue(ref(db,"slots"), (snap)=>{
     const slots = snap.val() || {};
 
-    mySlot = Object.keys(slots).find(k => slots[k] === deviceId);
+    const found = Object.keys(slots).find(k => slots[k] === deviceId);
 
-    if (mySlot !== undefined){
-        const i = parseInt(mySlot);
-        const col = i % 4;
-        const row = Math.floor(i/4);
+    if (found !== undefined){
+        mySlot = parseInt(found);
 
+        const col = mySlot % 4;
+        const row = Math.floor(mySlot / 4);
         const letters = ["A","B","C","D"];
         const code = letters[row] + (col+1);
 
         labelEl.innerText = code;
         statusEl.innerText = "LOCKED_IN";
 
+        // attach disconnect cleanup
+        onDisconnect(ref(db, `slots/${mySlot}`)).remove();
+
     } else {
+        // kicked or not assigned
+        mySlot = null;
+        joined = false;
         labelEl.innerText = "--";
-        statusEl.innerText = "WAITING_SLOT";
+        statusEl.innerText = "IDLE";
+        document.body.style.background = "#000";
     }
 });
 
-// LISTEN SYSTEM (GRADIENT)
-onValue(ref(db, "system/frame"), (snap)=>{
+// LISTEN FRAME
+onValue(ref(db,"system/frame"), (snap)=>{
     const frame = snap.val();
     if (!frame || mySlot === null) return;
 

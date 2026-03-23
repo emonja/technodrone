@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NODE://PIXEL_OVERRIDE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+    --bg:#000;
+    --fg:#bbb;
+    --accent:#fe7eaf;
+    --line:#111;
+}
+body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:monospace;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+}
+.header{
+    padding:10px;
+    font-size:11px;
+    letter-spacing:2px;
+    border-bottom:1px solid var(--line);
+}
+.grid{
+    flex:1;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(4,1fr);
+}
+.cell{
+    border:1px solid #000;
+}
+.controls{
+    display:flex;
+    border-top:1px solid var(--line);
+}
+input[type="color"]{
+    flex:1;
+    height:50px;
+    border:none;
+}
+button{
+    flex:1;
+    background:none;
+    border:1px solid var(--accent);
+    color:var(--accent);
+    font-family:monospace;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+PIXEL_OVERRIDE_MODE // DIRECT_FRAME_WRITE
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="controls">
+    <input type="color" id="color" value="#ff3399">
+    <button onclick="clearGrid()">CLEAR</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+  authDomain: "technodrone-ce06d.firebaseapp.com",
+  databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+  projectId: "technodrone-ce06d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const gridEl = document.getElementById("grid");
+const colorInput = document.getElementById("color");
+
+let frame = new Array(16).fill("#000000");
+
+// BUILD GRID
+for(let i=0;i<16;i++){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.dataset.index = i;
+
+    cell.onclick = () => {
+        const color = colorInput.value;
+        frame[i] = color;
+        render();
+        pushFrame();
+    };
+
+    gridEl.appendChild(cell);
+}
+
+// RENDER LOCAL
+function render(){
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach((c,i)=>{
+        c.style.background = frame[i];
+    });
+}
+
+// PUSH TO FIREBASE (OVERRIDE)
+function pushFrame(){
+    set(ref(db,"system/frame"), frame);
+}
+
+// CLEAR
+window.clearGrid = function(){
+    frame = new Array(16).fill("#000000");
+    render();
+    pushFrame();
+};
+
+// LISTEN (sync if changed elsewhere)
+onValue(ref(db,"system/frame"), (snap)=>{
+    const data = snap.val();
+    if (!data) return;
+
+    frame = data;
+    render();
+});
+</script>
+
+</body>
+</html>

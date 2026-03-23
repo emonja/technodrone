@@ -41,17 +41,26 @@ body{
     font-size:10px;
     color:var(--dim);
 }
+#tap{
+    position:absolute;
+    top:20px;
+    right:20px;
+    border:1px solid var(--active);
+    padding:10px;
+    cursor:pointer;
+}
 </style>
 </head>
 <body>
 
 <div id="label">--</div>
 <div id="join">JOIN GRID</div>
+<div id="tap">TAP</div>
 <div id="status">IDLE</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction, onDisconnect } 
+import { getDatabase, ref, onValue, runTransaction, onDisconnect, set } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -70,43 +79,16 @@ localStorage.setItem("node_id", deviceId);
 
 let mySlot = null;
 let joined = false;
+let slotMap = {};
+let allDevices = {};
 
+let currentColor = "#000000";
+
+// UI
 const labelEl = document.getElementById("label");
 const statusEl = document.getElementById("status");
 const joinBtn = document.getElementById("join");
-
-// TAP TEMPO
-let taps = [];
-let bpm = 0;
-
-// UI add
-const tapBtn = document.createElement("div");
-tapBtn.innerText = "TAP";
-tapBtn.style.position = "absolute";
-tapBtn.style.top = "20px";
-tapBtn.style.right = "20px";
-tapBtn.style.border = "1px solid #bbb";
-tapBtn.style.padding = "10px";
-tapBtn.style.cursor = "pointer";
-document.body.appendChild(tapBtn);
-
-tapBtn.onclick = () => {
-    const now = Date.now();
-    taps.push(now);
-
-    if (taps.length > 5) taps.shift();
-
-    if (taps.length >= 2){
-        let intervals = [];
-        for (let i=1;i<taps.length;i++){
-            intervals.push(taps[i] - taps[i-1]);
-        }
-        const avg = intervals.reduce((a,b)=>a+b,0) / intervals.length;
-        bpm = 60000 / avg;
-    }
-
-    statusEl.innerText = "BPM: " + bpm.toFixed(1);
-};
+const tapBtn = document.getElementById("tap");
 
 // JOIN
 joinBtn.onclick = () => {
@@ -126,11 +108,33 @@ joinBtn.onclick = () => {
     statusEl.innerText = "REQUESTING_SLOT...";
 };
 
+// TAP TEMPO
+let taps = [];
+let bpm = 0;
+
+tapBtn.onclick = () => {
+    const now = Date.now();
+    taps.push(now);
+    if (taps.length > 5) taps.shift();
+
+    if (taps.length >= 2){
+        let intervals = [];
+        for (let i=1;i<taps.length;i++){
+            intervals.push(taps[i] - taps[i-1]);
+        }
+        const avg = intervals.reduce((a,b)=>a+b,0) / intervals.length;
+        bpm = 60000 / avg;
+
+        set(ref(db, `devices/${deviceId}/bpm`), bpm);
+        statusEl.innerText = "BPM: " + bpm.toFixed(1);
+    }
+};
+
 // SLOT LISTENER
 onValue(ref(db,"slots"), (snap)=>{
-    const slots = snap.val() || {};
+    slotMap = snap.val() || {};
 
-    const found = Object.keys(slots).find(k => slots[k] === deviceId);
+    const found = Object.keys(slotMap).find(k => slotMap[k] === deviceId);
 
     if (found !== undefined){
         mySlot = parseInt(found);
@@ -150,12 +154,11 @@ onValue(ref(db,"slots"), (snap)=>{
         joined = false;
         labelEl.innerText = "--";
         statusEl.innerText = "IDLE";
+        document.body.style.background = "#000";
     }
 });
 
-// FRAME
-let currentColor = "#000000";
-
+// FRAME LISTENER
 onValue(ref(db,"system/frame"), (snap)=>{
     const frame = snap.val();
     if (!frame || mySlot === null) return;
@@ -163,29 +166,89 @@ onValue(ref(db,"system/frame"), (snap)=>{
     currentColor = frame[mySlot] || "#000000";
 });
 
-// ANIMATION LOOP (SMOOTH PULSE)
+// DEVICES LISTENER (for BPM)
+onValue(ref(db,"devices"), (snap)=>{
+    allDevices = snap.val() || {};
+});
+
+// HELPERS
+function hexToRgb(hex){
+    const bigint = parseInt(hex.slice(1),16);
+    return {
+        r:(bigint>>16)&255,
+        g:(bigint>>8)&255,
+        b:bigint&255
+    };
+}
+
+function rgbStr(r,g,b){
+    return `rgb(${r},${g},${b})`;
+}
+
+function shiftColor(rgb, factor){
+    return {
+        r: Math.min(255, rgb.r * factor),
+        g: Math.min(255, rgb.g * factor),
+        b: Math.min(255, rgb.b * factor)
+    };
+}
+
+function getNeighborSlots(slot){
+    const neighbors = [];
+
+    const col = slot % 4;
+    const row = Math.floor(slot / 4);
+
+    if (col > 0) neighbors.push(slot - 1);
+    if (col < 3) neighbors.push(slot + 1);
+    if (row > 0) neighbors.push(slot - 4);
+    if (row < 3) neighbors.push(slot + 4);
+
+    return neighbors;
+}
+
+// ANIMATION LOOP
 function animate(){
     requestAnimationFrame(animate);
 
-    if (!bpm || !currentColor){
-        document.body.style.background = currentColor;
+    if (mySlot === null){
+        document.body.style.background = "#000";
         return;
     }
 
-    const t = performance.now() / 1000;
-    const freq = bpm / 60;
+    const base = hexToRgb(currentColor);
 
-    // smooth sine pulse 0–1
-    const pulse = (Math.sin(t * freq * Math.PI * 2) + 1) / 2;
+    let influence = 0;
 
-    // shape it (soft attack, sharper decay)
-    const shaped = Math.pow(pulse, 2);
+    const neighbors = getNeighborSlots(mySlot);
 
-    const intensity = 0.2 + shaped * 0.8;
+    neighbors.forEach(slot => {
+        const device = slotMap[slot];
+        if (!device) return;
 
-    // apply brightness
-    document.body.style.background = currentColor;
-    document.body.style.filter = `brightness(${intensity})`;
+        const bpm = allDevices[device]?.bpm;
+        if (!bpm) return;
+
+        const t = performance.now() / 1000;
+        const freq = bpm / 60;
+
+        const pulse = (Math.sin(t * freq * Math.PI * 2) + 1) / 2;
+        const shaped = Math.pow(pulse, 2);
+
+        influence += shaped;
+    });
+
+    influence = influence / 4;
+
+    const center = base;
+    const edge = shiftColor(base, 0.6 + influence * 1.2);
+
+    document.body.style.background = `
+        radial-gradient(circle at center,
+            ${rgbStr(center.r, center.g, center.b)} 0%,
+            ${rgbStr(edge.r, edge.g, edge.b)} 80%
+        )
+    `;
 }
 
 animate();

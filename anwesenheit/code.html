@@ -66,116 +66,134 @@
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, onChildAdded, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
-        authDomain: "technodrone-ce06d.firebaseapp.com",
-        databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
-        projectId: "technodrone-ce06d",
-        appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+    authDomain: "technodrone-ce06d.firebaseapp.com",
+    databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+    projectId: "technodrone-ce06d",
+    appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+let masterCoords = null;
+let visitorCoords = null;
+let oscillators = {};
+let masterGain;
+
+// 🔥 NEW: visit writing control
+let lastWrite = 0;
+
+function writeVisit(){
+    if(!visitorCoords) return;
+
+    const now = Date.now();
+
+    // throttle + slight randomness
+    if(now - lastWrite < 4000 + Math.random()*3000) return;
+
+    lastWrite = now;
+
+    push(ref(db,"visits"),{
+        lat: visitorCoords.lat,
+        lng: visitorCoords.lng,
+        t: now
+    });
+}
+
+// --- AUDIO (unchanged) ---
+const FREQS = {
+    root: 138.59,
+    third: 164.81,
+    seventh: 246.94,
+    ninth: 311.13
+};
+
+function setupAudio() {
+    masterGain = audioCtx.createGain();
+    masterGain.connect(audioCtx.destination);
+    masterGain.gain.value = 0.15;
+
+    Object.entries(FREQS).forEach(([key, freq]) => {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        
+        osc.type = (key === 'root') ? 'sawtooth' : 'sine';
+        osc.frequency.value = freq;
+        g.gain.value = (key === 'root' || key === 'third') ? 0.4 : 0;
+        
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        oscillators[key] = g;
+    });
+}
+
+function updateMusicalProximity(distance) {
+    if (!oscillators.root) return;
+
+    const tension = Math.max(0, 1 - (distance / 1500));
+    oscillators.seventh.gain.setTargetAtTime(tension * 0.5, audioCtx.currentTime, 0.5);
+    oscillators.ninth.gain.setTargetAtTime(tension * 0.7, audioCtx.currentTime, 0.5);
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; 
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+document.getElementById('btn-sync').addEventListener('click', () => {
+    audioCtx.resume();
+    setupAudio();
+    document.getElementById('init-overlay').style.display = 'none';
     
-    let masterCoords = null;
-    let visitorCoords = null;
-    let oscillators = {};
-    let masterGain;
+    if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(pos => {
+            visitorCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            calculate();
 
-    // C#m(add9, no5) Harmonic Set
-    const FREQS = {
-        root: 138.59,    // C#3 (The constant)
-        third: 164.81,   // E3  (The melancholy)
-        seventh: 246.94, // B3  (The almost-resolution)
-        ninth: 311.13    // D#4 (The tension/sweetness)
-    };
+            // 🔥 NEW: write presence
+            writeVisit();
 
-    function setupAudio() {
-        masterGain = audioCtx.createGain();
-        masterGain.connect(audioCtx.destination);
-        masterGain.gain.value = 0.15;
-
-        Object.entries(FREQS).forEach(([key, freq]) => {
-            const osc = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            
-            osc.type = (key === 'root') ? 'sawtooth' : 'sine';
-            osc.frequency.value = freq;
-            
-            // Start with only Root and Third audible
-            g.gain.value = (key === 'root' || key === 'third') ? 0.4 : 0;
-            
-            osc.connect(g);
-            g.connect(masterGain);
-            osc.start();
-            oscillators[key] = g;
         });
     }
+});
 
-    function updateMusicalProximity(distance) {
-        if (!oscillators.root) return;
+onValue(ref(db, 'system_status/master_pos'), (snap) => {
+    masterCoords = snap.val();
+    calculate();
+});
 
-        // Tension scales as distance closes (max tension at 0m, fades by 1500m)
-        const tension = Math.max(0, 1 - (distance / 1500));
-        
-        // Swell the 7th and 9th
-        oscillators.seventh.gain.setTargetAtTime(tension * 0.5, audioCtx.currentTime, 0.5);
-        oscillators.ninth.gain.setTargetAtTime(tension * 0.7, audioCtx.currentTime, 0.5);
-        
-        // Subtle instability on the root as closeness increases
-        const detune = (1 - tension) * 2; 
-        oscillators.root.gain.value = 0.4 + (tension * 0.1);
-    }
+onChildAdded(ref(db, 'geo_trace'), (snap) => {
+    const data = snap.val();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.textContent = `[TRACE] LAT: ${data.lat.toFixed(4)} | LNG: ${data.lng.toFixed(4)}`;
+    const log = document.getElementById('read-only-log');
+    log.prepend(entry);
+});
 
-    function getDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const dLat = (lat2-lat1) * Math.PI/180;
-        const dLon = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
+function calculate() {
+    if (!masterCoords || !visitorCoords) return;
 
-    document.getElementById('btn-sync').addEventListener('click', () => {
-        audioCtx.resume();
-        setupAudio();
-        document.getElementById('init-overlay').style.display = 'none';
-        
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition(pos => {
-                visitorCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                calculate();
-            });
-        }
-    });
+    const d = getDistance(visitorCoords.lat, visitorCoords.lng, masterCoords.lat, masterCoords.lng);
 
-    onValue(ref(db, 'system_status/master_pos'), (snap) => {
-        masterCoords = snap.val();
-        calculate();
-    });
+    document.getElementById('dist-val').innerText = `${Math.round(d)} m`;
+    document.getElementById('status-text').innerText = d < 20 ? "INTERSECCIÓN LOGRADA" : "PROXIMIDAD ACTIVA";
 
-    onChildAdded(ref(db, 'geo_trace'), (snap) => {
-        const data = snap.val();
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.textContent = `[TRACE] LAT: ${data.lat.toFixed(4)} | LNG: ${data.lng.toFixed(4)}`;
-        const log = document.getElementById('read-only-log');
-        log.prepend(entry);
-    });
+    updateMusicalProximity(d);
+}
 
-    function calculate() {
-        if (!masterCoords || !visitorCoords) return;
-        const d = getDistance(visitorCoords.lat, visitorCoords.lng, masterCoords.lat, masterCoords.lng);
-        document.getElementById('dist-val').innerText = `${Math.round(d)} m`;
-        document.getElementById('status-text').innerText = d < 20 ? "INTERSECCIÓN LOGRADA" : "PROXIMIDAD ACTIVA";
-        updateMusicalProximity(d);
-    }
 </script>
 </body>
-
 </html>

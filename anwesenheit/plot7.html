@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SEHNSUCHT OBJECT</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b0a07;
+    overflow:hidden;
+}
+canvas{
+    display:block;
+}
+</style>
+</head>
+
+<body>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+//// FIREBASE
+const firebaseConfig = {
+apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+authDomain: "technodrone-ce06d.firebaseapp.com",
+databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+projectId: "technodrone-ce06d",
+appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+//// THREE SCENE
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth/window.innerHeight,
+    0.1,
+    1000
+);
+
+camera.position.set(0,0,60);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+//// PRIMARY DATA (WITH TIME)
+let pointsData = []; // {x,y,z,t}
+let geometry = new THREE.BufferGeometry();
+
+let material = new THREE.LineBasicMaterial({
+    color: 0xff4e00,
+    transparent:true,
+    opacity:0.6
+});
+
+let line = new THREE.Line(geometry, material);
+scene.add(line);
+
+let pointsMaterial = new THREE.PointsMaterial({
+    color:0xff4e00,
+    size:0.8,
+    transparent:true,
+    opacity:0.8
+});
+
+let pointsMesh = new THREE.Points(geometry, pointsMaterial);
+scene.add(pointsMesh);
+
+//// SECONDARY (VISITS)
+let secondaryPositions = [];
+let secondaryBasePositions = [];
+
+let secondaryGeometry = new THREE.BufferGeometry();
+
+let secondaryMaterial = new THREE.PointsMaterial({
+    color:0xffb97a,
+    size:1.0,
+    transparent:true,
+    opacity:0.6,
+    depthWrite:false
+});
+
+let secondaryPoints = new THREE.Points(secondaryGeometry, secondaryMaterial);
+scene.add(secondaryPoints);
+
+//// MOVEMENT LOGIC
+let prev = null;
+let x = 0;
+let y = 0;
+let z = 0;
+
+const scale = 10000;
+const zStep = 0.5;
+
+//// PRIMARY TRACE
+const traceRef = ref(db,"geo_trace");
+
+onChildAdded(traceRef,(data)=>{
+
+    const p = data.val();
+
+    if(prev){
+
+        const dx = (p.lng - prev.lng) * scale;
+        const dy = (p.lat - prev.lat) * scale;
+
+        x += dx;
+        y -= dy;
+        z += zStep;
+
+        pointsData.push({
+            x,y,z,
+            t: p.t || Date.now()
+        });
+
+        updatePrimaryGeometry();
+    }
+
+    prev = p;
+
+});
+
+function updatePrimaryGeometry(){
+
+    const flat = [];
+
+    pointsData.forEach(p=>{
+        flat.push(p.x,p.y,p.z);
+    });
+
+    geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(flat,3)
+    );
+
+    geometry.computeBoundingSphere();
+}
+
+//// SECONDARY VISITS
+const visitRef = ref(db,"visits");
+
+onChildAdded(visitRef,(data)=>{
+
+    const p = data.val();
+
+    if(prev){
+
+        const dx = (p.lng - prev.lng) * scale;
+        const dy = (p.lat - prev.lat) * scale;
+
+        const sx = x + dx + (Math.random()-0.5)*3;
+        const sy = y - dy + (Math.random()-0.5)*3;
+        const sz = z + (Math.random()-0.5)*3;
+
+        secondaryBasePositions.push(sx,sy,sz);
+        secondaryPositions.push(sx,sy,sz);
+
+        secondaryGeometry.setAttribute(
+            'position',
+            new THREE.Float32BufferAttribute(secondaryPositions,3)
+        );
+    }
+
+});
+
+//// TEMPORAL DRIFT
+function computeTemporalCenter(){
+
+    if(pointsData.length < 2) return {x:0,y:0,z:0};
+
+    const oldest = pointsData[0].t;
+    const newest = pointsData[pointsData.length-1].t;
+
+    let cx=0, cy=0, cz=0;
+    let total=0;
+
+    pointsData.forEach(p=>{
+
+        const w = (p.t - oldest) / (newest - oldest || 1);
+
+        cx += p.x * w;
+        cy += p.y * w;
+        cz += p.z * w;
+
+        total += w;
+    });
+
+    if(total === 0) return {x:0,y:0,z:0};
+
+    return {
+        x: cx/total,
+        y: cy/total,
+        z: cz/total
+    };
+}
+
+//// ANIMATION
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    // SCULPTURAL ROTATION
+    scene.rotation.y += 0.002;
+    scene.rotation.x += 0.0005;
+
+    // CAMERA BREATH
+    camera.position.z = 60 + Math.sin(Date.now()*0.001)*5;
+
+    // TEMPORAL DRIFT (VERY SLOW)
+    const c = computeTemporalCenter();
+
+    scene.position.x += (-c.x - scene.position.x) * 0.002;
+    scene.position.y += (-c.y - scene.position.y) * 0.002;
+    scene.position.z += (-c.z - scene.position.z) * 0.002;
+
+    // SECONDARY BREATHING
+    const attr = secondaryGeometry.attributes.position;
+
+    if(attr){
+
+        const time = Date.now() * 0.002;
+
+        for(let i=0;i<attr.count;i++){
+
+            const i3 = i*3;
+
+            const bx = secondaryBasePositions[i3];
+            const by = secondaryBasePositions[i3+1];
+            const bz = secondaryBasePositions[i3+2];
+
+            const pulse = Math.sin(time + i * 0.3) * 0.15;
+
+            attr.array[i3]     = bx + pulse;
+            attr.array[i3 + 1] = by + pulse;
+            attr.array[i3 + 2] = bz + pulse * 0.5;
+        }
+
+        attr.needsUpdate = true;
+    }
+
+    secondaryMaterial.opacity = 0.5 + Math.sin(Date.now()*0.001)*0.1;
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+//// RESIZE
+window.addEventListener('resize',()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+</script>
+
+</body>
+</html>

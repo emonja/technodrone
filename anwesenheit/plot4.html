@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SEHNSUCHT OBJECT // CONTROL</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b0a07;
+    overflow:hidden;
+}
+#timeline{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:40px;
+    cursor:ew-resize;
+}
+</style>
+</head>
+
+<body>
+
+<div id="timeline"></div>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+//// FIREBASE
+const firebaseConfig = {
+apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+authDomain: "technodrone-ce06d.firebaseapp.com",
+databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+projectId: "technodrone-ce06d",
+appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+//// THREE
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth/window.innerHeight,
+    0.1,
+    1000
+);
+camera.position.set(0,0,80);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+//// CONTROLS
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+controls.minDistance = 30;
+controls.maxDistance = 150;
+
+controls.autoRotate = false; // now manual by default
+
+//// GEOMETRY
+let positions = [];
+let visibleCount = 0;
+
+const geometry = new THREE.BufferGeometry();
+
+const material = new THREE.LineBasicMaterial({
+    color:0xff4e00,
+    transparent:true,
+    opacity:0.5
+});
+
+const line = new THREE.Line(geometry, material);
+scene.add(line);
+
+const pointsMaterial = new THREE.PointsMaterial({
+    color:0xff4e00,
+    size:1,
+    transparent:true,
+    opacity:0.9
+});
+
+const pointsMesh = new THREE.Points(geometry, pointsMaterial);
+scene.add(pointsMesh);
+
+//// MOVEMENT
+let prev = null;
+let x = 0;
+let y = 0;
+let z = 0;
+
+const scale = 10000;
+const zStep = 0.5;
+
+const traceRef = ref(db,"geo_trace");
+
+onChildAdded(traceRef,(data)=>{
+
+    const p = data.val();
+
+    if(prev){
+
+        const dx = (p.lng - prev.lng) * scale;
+        const dy = (p.lat - prev.lat) * scale;
+
+        x += dx;
+        y -= dy;
+        z += zStep;
+
+        positions.push(x,y,z);
+
+        updateGeometry();
+    }
+
+    prev = p;
+
+});
+
+function updateGeometry(){
+
+    const visiblePositions = positions.slice(0, visibleCount);
+
+    geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(visiblePositions,3)
+    );
+
+    geometry.computeBoundingSphere();
+}
+
+//// TIMELINE CONTROL
+const timeline = document.getElementById("timeline");
+
+let dragging = false;
+
+timeline.addEventListener("mousedown",()=> dragging = true);
+window.addEventListener("mouseup",()=> dragging = false);
+
+window.addEventListener("mousemove",(e)=>{
+
+    if(!dragging) return;
+
+    const ratio = e.clientX / window.innerWidth;
+
+    visibleCount = Math.floor(positions.length * ratio);
+
+    updateGeometry();
+});
+
+//// AUTO GROW (default behavior)
+setInterval(()=>{
+    if(!dragging){
+        visibleCount = positions.length;
+        updateGeometry();
+    }
+}, 500);
+
+//// ANIMATION
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    controls.update();
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+//// RESIZE
+window.addEventListener('resize',()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+</script>
+
+</body>
+</html>

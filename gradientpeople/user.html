@@ -219,7 +219,7 @@ window.addEventListener("beforeunload", () => {
 });
 
 // fallback: if connection drops
-onDisconnect(ref(db, `devices/${deviceId}/bpm`)).set(0);
+onDisconnect(ref(db, `devices/${deviceId}/bpm`)).set(1);
 
 </script>
 

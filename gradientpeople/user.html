@@ -107,8 +107,8 @@ tapBtn.onclick = () => {
         // WRITE BPM TO FIREBASE
         if (mySlot !== null){
             set(ref(db, `devices/${deviceId}`), {
-                bpm: bpm,
-                slot: mySlot,
+                 bpm: bpm,
+                slot: mySlot !== null ? mySlot : -1,
                 last_update: Date.now()
             });
         }

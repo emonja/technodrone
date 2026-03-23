@@ -104,14 +104,12 @@ tapBtn.onclick = () => {
         const avg = intervals.reduce((a,b)=>a+b,0) / intervals.length;
         bpm = 60000 / avg;
 
-        // WRITE BPM TO FIREBASE
-        if (mySlot !== null){
-            set(ref(db, `devices/${deviceId}`), {
-                 bpm: bpm,
-                slot: mySlot !== null ? mySlot : -1,
-                last_update: Date.now()
-            });
-        }
+        // WRITE BPM (always persist node)
+        set(ref(db, `devices/${deviceId}`), {
+            bpm: bpm,
+            slot: mySlot !== null ? mySlot : -1,
+            last_update: Date.now()
+        });
 
         statusEl.innerText = "BPM: " + bpm.toFixed(1);
     }
@@ -208,6 +206,21 @@ function animate(){
 }
 
 animate();
+
+
+// 🔥 EXIT BEHAVIOR → BPM = 0 (node persists)
+
+window.addEventListener("beforeunload", () => {
+    set(ref(db, `devices/${deviceId}`), {
+        bpm: 0,
+        slot: mySlot !== null ? mySlot : -1,
+        last_update: Date.now()
+    });
+});
+
+// fallback: if connection drops
+onDisconnect(ref(db, `devices/${deviceId}/bpm`)).set(0);
+
 </script>
 
 </body>

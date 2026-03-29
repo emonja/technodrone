@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SEHNSUCHT PROCESS</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b0a07;
+    overflow:hidden;
+    font-family: monospace;
+    color:#ffb97a;
+}
+
+#cycle{
+    position:fixed;
+    top:20px;
+    left:20px;
+    font-size:14px;
+    opacity:0.6;
+}
+
+#tx{
+    position:fixed;
+    top:40px;
+    left:20px;
+    font-size:12px;
+    opacity:0.5;
+}
+
+#console{
+    position:fixed;
+    bottom:20px;
+    left:20px;
+    font-size:11px;
+    opacity:0.5;
+}
+</style>
+</head>
+
+<body>
+
+<div id="cycle">CYCLE 0000</div>
+<div id="tx">TX 000000</div>
+
+<div id="console">
+PREV: ---<br>
+NOW: ---<br>
+NEXT: ---
+</div>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+//// FIREBASE
+const firebaseConfig = {
+apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+authDomain: "technodrone-ce06d.firebaseapp.com",
+databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+projectId: "technodrone-ce06d",
+appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+//// AUDIO (VCO / VCF / VCA)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const osc = audioCtx.createOscillator();
+const filter = audioCtx.createBiquadFilter();
+const gain = audioCtx.createGain();
+
+osc.type = "sawtooth";
+filter.type = "lowpass";
+
+osc.connect(filter);
+filter.connect(gain);
+gain.connect(audioCtx.destination);
+
+osc.start();
+
+// start audio on interaction
+window.addEventListener("click", ()=> audioCtx.resume());
+
+//// THREE
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,1000);
+camera.position.set(0,0,60);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+
+//// GLOBAL MEMORY
+let rawPoints = [];
+let transmissionCount = 0;
+
+onChildAdded(ref(db,"geo_trace"), d=>{
+    rawPoints.push(d.val());
+    transmissionCount++;
+
+    document.getElementById("tx").innerText =
+        "TX " + String(transmissionCount).padStart(6,"0");
+});
+
+//// STATE MACHINE
+let state = "COLLECT";
+let stateStart = Date.now();
+let cycle = 0;
+
+const DUR = {
+COLLECT: 5000,
+DRAW: 5 * 60 * 1000,
+HOLD: 2 * 60 * 1000,
+FADE: 10000,
+RESET: 1000
+};
+
+//// ACTIVE DATA
+let pointsData = [];
+
+//// THREE OBJECTS
+let geometry = new THREE.BufferGeometry();
+
+let material = new THREE.LineBasicMaterial({
+    color:0xff4e00,
+    transparent:true,
+    opacity:0.6
+});
+
+let line = new THREE.Line(geometry, material);
+scene.add(line);
+
+let pointsMesh = new THREE.Points(
+    geometry,
+    new THREE.PointsMaterial({
+        color:0xff4e00,
+        size:0.8,
+        transparent:true,
+        opacity:0.8
+    })
+);
+scene.add(pointsMesh);
+
+//// SNAPSHOT
+function buildSnapshot(){
+
+    pointsData = [];
+
+    let x=0,y=0,z=0;
+    let prev=null;
+    let lastAcceptedT = null;
+
+    const scale = 10000;
+    const MAX_STEP = 50;
+    const MIN_DT = 1500;
+
+    let syntheticTime = 0;
+
+    rawPoints.forEach((p,i)=>{
+
+        if(prev){
+
+            const dx = (p.lng-prev.lng)*scale;
+            const dy = (p.lat-prev.lat)*scale;
+
+            let t = p.t || (syntheticTime += 1000);
+
+            if(lastAcceptedT !== null){
+                const dt = t - lastAcceptedT;
+                if(dt >= 0 && dt < MIN_DT){
+                    prev = p;
+                    return;
+                }
+            }
+
+            if(Math.abs(dx) < MAX_STEP && Math.abs(dy) < MAX_STEP){
+
+                x+=dx;
+                y-=dy;
+                z+=0.5;
+
+                pointsData.push({x,y,z,t});
+                lastAcceptedT = t;
+            }
+        }
+
+        prev = p;
+    });
+
+    // failsafe
+    if(pointsData.length < 5){
+        pointsData = [];
+        let x=0,y=0,z=0;
+        let prev=null;
+
+        rawPoints.forEach((p,i)=>{
+            if(prev){
+                const dx = (p.lng-prev.lng)*scale;
+                const dy = (p.lat-prev.lat)*scale;
+
+                if(Math.abs(dx)<50 && Math.abs(dy)<50){
+                    x+=dx; y-=dy; z+=0.5;
+                    pointsData.push({x,y,z,t:i*1000});
+                }
+            }
+            prev=p;
+        });
+    }
+
+    console.log("POINTS:", pointsData.length);
+}
+
+//// LAGGING TEMPORAL CENTER
+function computeLagCenter(currentT){
+
+    let cx=0, cy=0, cz=0, total=0;
+
+    for(let i=0;i<pointsData.length;i++){
+
+        const p = pointsData[i];
+        if(p.t > currentT) break;
+
+        const w = Math.exp((p.t - currentT) / 5000);
+
+        cx += p.x * w;
+        cy += p.y * w;
+        cz += p.z * w;
+
+        total += w;
+    }
+
+    if(total===0) return {x:0,y:0,z:0};
+
+    return {x:cx/total, y:cy/total, z:cz/total};
+}
+
+//// DRAW + AUDIO
+function updateDraw(){
+
+    if(pointsData.length < 2) return;
+
+    const elapsed = Date.now() - stateStart;
+    const progress = Math.min(elapsed / DUR.DRAW,1);
+
+    const startT = pointsData[0].t;
+    const endT = pointsData[pointsData.length-1].t;
+
+    const currentT = startT + (endT-startT)*progress;
+
+    const flat = [];
+
+    let prevPoint=null, nowPoint=null, nextPoint=null;
+
+    for(let i=0;i<pointsData.length;i++){
+
+        const p = pointsData[i];
+
+        if(p.t <= currentT){
+
+            flat.push(p.x,p.y,p.z);
+
+            prevPoint = pointsData[i-1];
+            nowPoint = p;
+            nextPoint = pointsData[i+1];
+        }
+    }
+
+    geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(flat,3)
+    );
+
+    geometry.computeBoundingSphere();
+
+    updateConsole(prevPoint,nowPoint,nextPoint);
+
+    //// CENTER (PROCESS)
+    const center = computeLagCenter(currentT);
+
+    scene.position.x += (-center.x - scene.position.x) * 0.02;
+    scene.position.y += (-center.y - scene.position.y) * 0.02;
+    scene.position.z += (-center.z - scene.position.z) * 0.02;
+
+    //// AUDIO MAPPING
+
+    if(prevPoint && nowPoint){
+
+        const dx = nowPoint.x - prevPoint.x;
+        const dy = nowPoint.y - prevPoint.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        // VCO (pitch)
+        osc.frequency.value = 100 + dist * 5;
+
+        // VCF cutoff
+        filter.frequency.value = 200 + progress * 2000;
+
+        // resonance
+        filter.Q.value = 1 + Math.min(dist,20) * 0.2;
+
+        // VCA (LFO)
+        gain.gain.value = 0.1 + Math.sin(Date.now()*0.002)*0.05;
+    }
+}
+
+//// CONSOLE
+function updateConsole(a,b,c){
+
+    const f = p => p
+        ? `${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}`
+        : "---";
+
+    document.getElementById("console").innerHTML =
+        `PREV: ${f(a)}<br>NOW: ${f(b)}<br>NEXT: ${f(c)}`;
+}
+
+//// FADE
+function updateFade(){
+
+    const t = (Date.now()-stateStart)/DUR.FADE;
+    const flicker = Math.sin(Date.now()*0.02)*0.5+0.5;
+
+    material.opacity = (1-t)*0.6 * flicker;
+    pointsMesh.material.opacity = (1-t)*0.8 * flicker;
+
+    gain.gain.value *= (1-t);
+}
+
+//// STATE
+function setState(s){
+
+    state = s;
+    stateStart = Date.now();
+
+    if(s==="DRAW"){
+        buildSnapshot();
+        material.opacity = 0.6;
+        pointsMesh.material.opacity = 0.8;
+    }
+
+    if(s==="RESET"){
+
+        geometry.setAttribute(
+            'position',
+            new THREE.Float32BufferAttribute([],3)
+        );
+
+        cycle++;
+
+        document.getElementById("cycle").innerText =
+            "CYCLE " + String(cycle).padStart(4,"0");
+
+        scene.rotation.y += Math.random()*0.2;
+        scene.scale.setScalar(1 + (Math.random()-0.5)*0.05);
+    }
+}
+
+//// LOOP
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    const elapsed = Date.now() - stateStart;
+
+    if(state==="COLLECT" && elapsed > DUR.COLLECT){
+        setState("DRAW");
+    }
+
+    if(state==="DRAW"){
+        updateDraw();
+        if(elapsed > DUR.DRAW) setState("HOLD");
+    }
+
+    if(state==="HOLD" && elapsed > DUR.HOLD){
+        setState("FADE");
+    }
+
+    if(state==="FADE"){
+        updateFade();
+        if(elapsed > DUR.FADE) setState("RESET");
+    }
+
+    if(state==="RESET" && elapsed > DUR.RESET){
+        setState("COLLECT");
+    }
+
+    scene.rotation.y += 0.001;
+    camera.position.z = 60 + Math.sin(Date.now()*0.001)*3;
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+//// RESIZE
+addEventListener('resize',()=>{
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+});
+
+</script>
+
+</body>
+</html>

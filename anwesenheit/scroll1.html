@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SEHNSUCHT STREAM</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b0a07;
+    overflow:hidden;
+}
+</style>
+</head>
+
+<body>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+//// FIREBASE
+const firebaseConfig = {
+apiKey: "AIzaSyDXZbUQ81jxiGgH89gXdoH7pf2mSxp_rN0",
+authDomain: "technodrone-ce06d.firebaseapp.com",
+databaseURL: "https://technodrone-ce06d-default-rtdb.firebaseio.com",
+projectId: "technodrone-ce06d",
+appId: "1:869296657162:web:7e0bf1093fc59d4a99a0f3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+//// THREE
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,1000);
+camera.position.set(0,0,60);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+
+//// DATA
+let rawPoints = [];
+
+let minLat = Infinity;
+let maxLat = -Infinity;
+
+let stream = [];
+
+let lastPoint = null;
+let currentX = 0;
+
+const WIDTH_LIMIT = 120;
+const SCROLL_SPEED = 0.5;
+
+onChildAdded(ref(db,"geo_trace"), d=>{
+
+    const p = d.val();
+    rawPoints.push(p);
+
+    // update global Y range
+    if(p.lat < minLat) minLat = p.lat;
+    if(p.lat > maxLat) maxLat = p.lat;
+
+    if(lastPoint){
+
+        const dt = (p.t || Date.now()) - (lastPoint.t || Date.now());
+        const dxGeo = Math.abs(p.lng - lastPoint.lng);
+
+        const speed = (dt * 0.0005) + (dxGeo * 5000);
+
+        currentX += speed;
+
+        const range = maxLat - minLat || 1;
+
+        const y = ((p.lat - minLat) / range - 0.5) * 50;
+
+        stream.push({x: currentX, y});
+    }
+
+    lastPoint = p;
+});
+
+//// GEOMETRY
+let geometry = new THREE.BufferGeometry();
+let material = new THREE.LineBasicMaterial({color:0xff4e00});
+let line = new THREE.Line(geometry, material);
+scene.add(line);
+
+//// UPDATE
+function update(){
+
+    // scroll everything left
+    for(let i=0;i<stream.length;i++){
+        stream[i].x -= SCROLL_SPEED;
+    }
+
+    // remove offscreen
+    stream = stream.filter(p => p.x > -WIDTH_LIMIT);
+
+    // build geometry
+    const flat = [];
+
+    for(let i=0;i<stream.length;i++){
+        flat.push(stream[i].x, stream[i].y, 0);
+    }
+
+    geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(flat,3)
+    );
+
+    geometry.computeBoundingSphere();
+
+    // camera reacts to Y
+    if(stream.length > 0){
+
+        let avgY = 0;
+        stream.forEach(p => avgY += p.y);
+        avgY /= stream.length;
+
+        camera.position.z += ((60 + Math.abs(avgY)*0.5) - camera.position.z) * 0.05;
+    }
+}
+
+//// LOOP
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    update();
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+//// RESIZE
+addEventListener('resize',()=>{
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+});
+
+</script>
+
+</body>
+</html>

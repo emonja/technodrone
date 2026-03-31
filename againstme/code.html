@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chaos Dodge - Outline Edition</title>
+    <style>
+        body { 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background: #fff; overflow: hidden;
+            font-family: monospace;
+        }
+        canvas { border: 2px solid black; max-width: 95vw; max-height: 80vh; cursor: none; }
+        #ui { position: absolute; top: 20px; text-align: center; pointer-events: none; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div id="ui">BALLS: <span id="count">1</span> | TIME: <span id="timer">0</span>s</div>
+    <canvas id="gameCanvas" width="360" height="600"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const timerElement = document.getElementById('timer');
+    const countElement = document.getElementById('count');
+
+    let startTime = Date.now();
+    let gameOver = false;
+    let bottomBounceCount = 0;
+    let balls = [];
+
+    const config = {
+        lineWeight: 2,
+        paddleWidth: 50,
+        paddleHeight: 12,
+        ballSize: 15,
+        initialSpeed: 4
+    };
+
+    const paddle = {
+        x: canvas.width / 2 - config.paddleWidth / 2,
+        y: canvas.height - 60,
+        w: config.paddleWidth,
+        h: config.paddleHeight
+    };
+
+    function createBall(isExtra = false) {
+        return {
+            x: canvas.width / 2,
+            y: isExtra ? 50 : 150,
+            size: config.ballSize,
+            dx: (Math.random() - 0.5) * 10,
+            dy: isExtra ? config.initialSpeed : -config.initialSpeed,
+            speedMultiplier: 1.0 + (balls.length * 0.05) // New balls are slightly faster
+        };
+    }
+
+    function resetGame() {
+        balls = [createBall()];
+        bottomBounceCount = 0;
+        startTime = Date.now();
+        gameOver = false;
+        countElement.innerText = balls.length;
+    }
+
+    // Initialize
+    resetGame();
+
+    function handleMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const scaleX = canvas.width / rect.width;
+        paddle.x = (clientX - rect.left) * scaleX - paddle.w / 2;
+
+        if (paddle.x < 0) paddle.x = 0;
+        if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+        
+        if (gameOver) resetGame();
+    }
+
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('touchmove', (e) => {
+        handleMove(e);
+        e.preventDefault();
+    }, { passive: false });
+
+    function update() {
+        if (gameOver) return;
+
+        let timeAlive = Math.floor((Date.now() - startTime) / 1000);
+        timerElement.innerText = timeAlive;
+
+        balls.forEach(ball => {
+            ball.x += ball.dx * ball.speedMultiplier;
+            ball.y += ball.dy * ball.speedMultiplier;
+
+            // Side Walls
+            if (ball.x <= 0 || ball.x + ball.size >= canvas.width) {
+                ball.dx *= -1;
+            }
+            
+            // Top Wall
+            if (ball.y <= 0) {
+                ball.dy *= -1;
+            }
+
+            // Bottom Wall (The Spawner)
+            if (ball.y + ball.size >= canvas.height) {
+                ball.dy *= -1;
+                bottomBounceCount++;
+                
+                // Spawn new ball every 3 bottom bounces
+                if (bottomBounceCount % 3 === 0) {
+                    balls.push(createBall(true));
+                    countElement.innerText = balls.length;
+                }
+            }
+
+            // Collision with Paddle
+            if (ball.y + ball.size >= paddle.y && 
+                ball.y <= paddle.y + paddle.h &&
+                ball.x + ball.size >= paddle.x && 
+                ball.x <= paddle.x + paddle.w) {
+                gameOver = true;
+            }
+
+            // Subtle speed increase
+            ball.speedMultiplier += 0.0001;
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = config.lineWeight;
+        ctx.strokeStyle = 'black';
+
+        // Draw Paddle
+        ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h);
+
+        // Draw All Balls
+        balls.forEach(ball => {
+            ctx.strokeRect(ball.x, ball.y, ball.size, ball.size);
+        });
+
+        if (gameOver) {
+            ctx.fillStyle = "white";
+            ctx.fillRect(40, canvas.height/2 - 50, canvas.width - 80, 100);
+            ctx.strokeRect(40, canvas.height/2 - 50, canvas.width - 80, 100);
+            
+            ctx.textAlign = "center";
+            ctx.fillStyle = "black";
+            ctx.font = "bold 18px monospace";
+            ctx.fillText("SYSTEM FAILURE", canvas.width/2, canvas.height/2 - 10);
+            ctx.font = "12px monospace";
+            ctx.fillText(`SURVIVED ${balls.length} BALLS`, canvas.width/2, canvas.height/2 + 15);
+            ctx.fillText("TAP TO REBOOT", canvas.width/2, canvas.height/2 + 35);
+        }
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+</script>
+</body>
+</html>

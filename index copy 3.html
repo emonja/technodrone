@@ -14,13 +14,6 @@
             --tear-pink: #ff3399;
         }
 
-        body.day-mode {
-            --bg: #ffffff;
-            --dim-text: #888;
-            --active-text: #000;
-            --row-border: #eee;
-        }
-
         body {
             background-color: var(--bg);
             color: var(--dim-text);
@@ -35,9 +28,9 @@
             box-sizing: border-box;
             overflow: hidden; 
             -webkit-tap-highlight-color: transparent;
-            transition: background 1s ease;
         }
 
+        /* Scanline Overlay */
         body::after {
             content: "";
             position: fixed;
@@ -58,7 +51,9 @@
             color: #666;
         }
 
-        .dir-listing { flex-grow: 1; }
+        .dir-listing {
+            flex-grow: 1;
+        }
 
         .row {
             display: grid;
@@ -87,10 +82,11 @@
         #r5 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
         #r6 a:hover { color: var(--tear-pink); text-shadow: 0 0 8px var(--tear-pink); }
         #r7 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
-        /* GEGENFLUCHT Highlight */
-        #r8 a:hover { color: var(--rebel-pink); text-shadow: 0 0 8px var(--rebel-pink); }
 
-        .glitch-active { filter: invert(1) contrast(200%); opacity: 0.5; }
+        .glitch-active {
+            filter: invert(1) contrast(200%);
+            opacity: 0.5;
+        }
 
         footer {
             padding: 20px 0;
@@ -114,6 +110,7 @@
         }
 
         #snd-ctrl.active { color: #fff; border-color: #444; }
+
         .blink { animation: blinker 1.2s step-start infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
     </style>
@@ -164,15 +161,10 @@
         <span>23.02.26</span><span>[MEM]</span>
         <a href="hesaid/code.html">NODE://STABILITY_FINAL_v2</a>
     </div>
-
-    <div class="row" id="r8">
-        <span>31.03.26</span><span>[FLX]</span>
-        <a href="gegenflucht/code.html">NODE://GEGENFLUCHT</a>
-    </div>
 </div>
 
 <footer id="footer-bits">
-    TERMINAL_V.05 // RHIZOME_CORE_INIT <br>
+    TERMINAL_V.04 // RHIZOME_CORE_INIT <br>
     STATUS: ARCHIVE_DECRYPTED // ALL_NODES_ACTIVE
 </footer>
 
@@ -183,6 +175,7 @@
     const audio = document.getElementById('handshake-audio');
     const sndBtn = document.getElementById('snd-ctrl');
 
+    // Typewriter
     let charIdx = 0;
     function type() {
         if (charIdx < headerStr.length) {
@@ -196,8 +189,7 @@
     }
 
     function revealRows() {
-        // Updated array to include r8
-        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8'].forEach((id, index) => {
+        ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'].forEach((id, index) => {
             setTimeout(() => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('visible');
@@ -217,6 +209,7 @@
         }
     }
 
+    // Touch Glitch
     document.addEventListener('touchstart', (e) => {
         if (e.target.tagName !== 'A') {
             listingEl.classList.add('glitch-active');

@@ -1,240 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>NODE://GEGENFLUCHT</title>
-    <style>
-        :root { 
-            --bg: #000; 
-            --text: #444; 
-            --active-node: #fe7eaf; 
-            --dim-active: rgba(254, 126, 175, 0.1);
-            --btn-bg: #111;
-            --btn-text: #fe7eaf;
-        }
-        body.day-mode {
-            --bg: #ffffff; --text: #000; --active-node: #0066ff; 
-            --dim-active: #e6f0ff; --btn-bg: #000; --btn-text: #fff;
-        }
-        body { 
-            background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; 
-            margin: 0; height: 100vh; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; transition: background 1.5s ease; 
-            overflow: hidden; -webkit-tap-highlight-color: transparent;
-        }
-        .nav-wrapper { position: fixed; top: calc(env(safe-area-inset-top) + 20px); right: 20px; z-index: 9999; }
-        .nav-return { text-decoration: none; color: var(--text); font-size: 11px; letter-spacing: 1px; }
-        header { letter-spacing: 3px; font-size: 11px; margin-bottom: 20px; text-transform: uppercase; }
-        #env-info { color: var(--text); transition: color 0.1s; }
-        #env-info.flash { color: var(--active-node); font-weight: bold; }
-        #game-container { position: relative; background: transparent; padding: 10px; border: 2px solid var(--text); transition: border-color 0.1s; }
-        #game-container.flash { border-color: var(--active-node); }
-        canvas { display: block; background: transparent; cursor: none; touch-action: none; }
-        #ui { margin-bottom: 10px; width: 100%; display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 1px; }
-        #init-btn { 
-            margin-top: 40px; background: var(--btn-bg); border: 1px solid var(--active-node); 
-            color: var(--btn-text); padding: 12px 24px; font-family: 'Courier New', monospace;
-            cursor: pointer; letter-spacing: 2px; z-index: 100;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NODE://GEGENFLUCHT</title>
+<style>
+    :root { 
+        --bg: #000; 
+        --text: #555; 
+        --active: #ff3366; 
+        --dim: rgba(255, 51, 102, 0.08);
+    }
+    body { 
+        background: var(--bg); 
+        color: var(--text); 
+        font-family: 'Courier New', monospace; 
+        margin: 0; 
+        height: 100vh; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden;
+    }
+    header { 
+        position: fixed; 
+        top: 30px; 
+        letter-spacing: 4px; 
+        font-size: 11px; 
+        text-transform: uppercase; 
+        opacity: 0.6;
+    }
+    #game-container { 
+        position: relative; 
+        border: 2px solid var(--text); 
+        padding: 12px;
+    }
+    canvas { 
+        display: block; 
+        background: #000; 
+        image-rendering: pixelated;
+    }
+    #ui { 
+        width: 300px; 
+        display: flex; 
+        justify-content: space-between; 
+        font-size: 11px; 
+        letter-spacing: 1px; 
+        margin-bottom: 8px;
+    }
+    #message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 13px;
+        color: var(--active);
+        text-align: center;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.4s;
+        text-shadow: 0 0 8px var(--active);
+    }
+    button {
+        margin-top: 30px;
+        background: transparent;
+        border: 1px solid var(--active);
+        color: var(--active);
+        padding: 14px 32px;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    button:hover {
+        background: var(--active);
+        color: #000;
+    }
+</style>
 </head>
 <body>
 
-    <div class="nav-wrapper"><a href="../index.html" class="nav-return">back_to_root</a></div>
+<header>NODE://GEGENFLUCHT</header>
 
-    <header>NODE://GEGENFLUCHT | <span id="env-info">STABLE</span></header>
-
-    <div id="game-container">
-        <div id="ui">
-            <span>NODES: <span id="count">1</span></span>
-            <span>STABILITY: <span id="timer">100</span>%</span>
-        </div>
-        <canvas id="gameCanvas" width="300" height="420"></canvas>
+<div id="game-container">
+    <div id="ui">
+        <span>NODES: <span id="count">1</span></span>
+        <span>SURVIVAL: <span id="stability">100</span>%</span>
     </div>
+    <canvas id="gameCanvas" width="300" height="420"></canvas>
+    <div id="message"></div>
+</div>
 
-    <button id="init-btn">INIT_CORE</button>
+<button id="init-btn">BEGIN SURVIVAL SEQUENCE</button>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const timerElement = document.getElementById('timer');
-    const countElement = document.getElementById('count');
-    const envInfo = document.getElementById('env-info');
-    const container = document.getElementById('game-container');
-    const initBtn = document.getElementById('init-btn');
+// ==================== GEGENFLUCHT ====================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const stabilityEl = document.getElementById('stability');
+const countEl = document.getElementById('count');
+const messageEl = document.getElementById('message');
+const initBtn = document.getElementById('init-btn');
 
-    let audioCtx, droneOsc, neurosisOsc, droneGain;
-    let balls = [];
-    let gameOver = false;
-    let masterBounceCount = 0;
-    let score = 100;
+let audioCtx, drone, neurosis, masterGain;
+let balls = [];
+let stability = 100;
+let gameOver = false;
+let masterHits = 0;
 
-    const F_SHARP_1 = 46.25; // Deep F#1
+const F_SHARP = 46.25; // deep F#1
 
-    // --- Audio Engine ---
-    function initAudio() {
-        if(!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Base Drone
-            droneOsc = audioCtx.createOscillator();
-            droneGain = audioCtx.createGain();
-            droneOsc.type = 'sawtooth';
-            droneOsc.frequency.setValueAtTime(F_SHARP_1, audioCtx.currentTime);
-            droneGain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-            
-            // Neurosis Layer (The one that rises)
-            neurosisOsc = audioCtx.createOscillator();
-            neurosisOsc.type = 'square';
-            neurosisOsc.frequency.setValueAtTime(F_SHARP_1, audioCtx.currentTime);
-
-            droneOsc.connect(droneGain);
-            neurosisOsc.connect(droneGain);
-            droneGain.connect(audioCtx.destination);
-
-            droneOsc.start();
-            neurosisOsc.start();
-        }
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-    }
-
-    function updateDrone() {
-        if(!audioCtx) return;
-        // Frequency rises based on number of balls and lowering stability
-        const strain = (balls.length * 10) + (100 - score);
-        const newFreq = F_SHARP_1 * (1 + (strain / 100));
-        
-        neurosisOsc.frequency.setTargetAtTime(newFreq, audioCtx.currentTime, 0.5);
-        // Increase volume slightly as it gets more chaotic
-        droneGain.gain.setTargetAtTime(0.01 + (strain / 2000), audioCtx.currentTime, 0.5);
-    }
-
-    function playBounceSound(isMaster) {
-        if(!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(isMaster ? 185.00 : 370.00, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    }
-
-    function triggerFlash() {
-        envInfo.classList.add('flash');
-        container.classList.add('flash');
-        setTimeout(() => {
-            envInfo.classList.remove('flash');
-            container.classList.remove('flash');
-        }, 100);
-    }
-
-    // --- Game Engine ---
-    const config = { paddleWidth: 60, paddleHeight: 15, ballSize: 12, speed: 3.5 };
-    const paddle = { x: 120, y: 360, w: config.paddleWidth, h: config.paddleHeight };
-
-    function createBall(isExtra = false) {
-        return {
-            id: isExtra ? "extra" : "master",
-            x: canvas.width / 2, y: 100, size: config.ballSize,
-            dx: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2),
-            dy: config.speed,
-            mult: 1.0 + (balls.length * 0.05)
-        };
-    }
-
-    function reset() {
-        initAudio();
-        balls = [createBall(false)];
-        masterBounceCount = 0;
-        score = 100;
-        gameOver = false;
-        initBtn.style.display = 'none';
-        countElement.innerText = balls.length;
-    }
-
-    function handleInput(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        paddle.x = (clientX - rect.left) * (canvas.width / rect.width) - paddle.w / 2;
-        if(paddle.x < 0) paddle.x = 0;
-        if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
-        if(gameOver) reset();
-    }
-
-    window.addEventListener('mousemove', handleInput);
-    window.addEventListener('touchmove', e => { handleInput(e); e.preventDefault(); }, {passive:false});
-    initBtn.onclick = reset;
-
-    function update() {
-        if(gameOver || balls.length === 0) return;
-        updateDrone();
-
-        balls.forEach(b => {
-            b.x += b.dx * b.mult;
-            b.y += b.dy * b.mult;
-
-            if(b.x <= 0 || b.x + b.size >= canvas.width) { b.dx *= -1; playBounceSound(false); }
-            if(b.y <= 0) { b.dy *= -1; playBounceSound(false); }
-
-            if(b.y + b.size >= canvas.height) {
-                b.dy *= -1;
-                triggerFlash();
-                playBounceSound(true);
-                if(b.id === "master") {
-                    masterBounceCount++;
-                    if(masterBounceCount % 5 === 0) {
-                        balls.push(createBall(true));
-                        countElement.innerText = balls.length;
-                    }
-                }
-                score = Math.max(0, score - 1);
-                timerElement.innerText = score;
-            }
-
-            if (b.x + b.size >= paddle.x && b.x <= paddle.x + paddle.w &&
-                b.y + b.size >= paddle.y && b.y <= paddle.y + paddle.h) {
-                gameOver = true;
-                if(droneGain) droneGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-                initBtn.style.display = 'block';
-            }
-        });
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const style = getComputedStyle(document.body);
-        const activeColor = style.getPropertyValue('--active-node');
-        const textColor = style.getPropertyValue('--text');
-
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = textColor;
-        ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h);
-
-        balls.forEach(b => {
-            ctx.strokeStyle = (b.id === "master") ? activeColor : textColor;
-            ctx.strokeRect(b.x, b.y, b.size, b.size);
-        });
-
-        if(gameOver) {
-            ctx.fillStyle = activeColor;
-            ctx.textAlign = "center";
-            ctx.font = "bold 14px monospace";
-            ctx.fillText("SYSTEM_HALTED", canvas.width/2, canvas.height/2);
-        }
-    }
-
-    function loop() { update(); draw(); requestAnimationFrame(loop); }
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
-    function checkTime() {
-        const h = new Date().getHours();
-        if(h >= 7 && h < 19) document.body.classList.add('day-mode');
-        else document.body.classList.remove('day-mode');
+    drone = audioCtx.createOscillator();
+    neurosis = audioCtx.createOscillator();
+    masterGain = audioCtx.createGain();
+    
+    drone.type = 'sawtooth';
+    neurosis.type = 'square';
+    
+    drone.frequency.setValueAtTime(F_SHARP, audioCtx.currentTime);
+    neurosis.frequency.setValueAtTime(F_SHARP * 2, audioCtx.currentTime);
+    
+    masterGain.gain.value = 0.012;
+    
+    drone.connect(masterGain);
+    neurosis.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+    
+    drone.start();
+    neurosis.start();
+}
+
+function updateAudio() {
+    if (!audioCtx) return;
+    const strain = (balls.length - 1) * 12 + (100 - stability);
+    const newFreq = F_SHARP * (1 + strain / 90);
+    
+    neurosis.frequency.setTargetAtTime(newFreq * 1.8, audioCtx.currentTime, 0.6);
+    masterGain.gain.setTargetAtTime(0.012 + (strain / 2800), audioCtx.currentTime, 0.4);
+}
+
+function playHitSound(isMaster) {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(isMaster ? 92 : 184, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.035, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.09);
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.1);
+}
+
+// Game objects
+const paddle = { x: 120, y: 360, w: 68, h: 14 };
+const config = { ballSize: 11, baseSpeed: 3.8 };
+
+function createBall(isMaster = true) {
+    return {
+        x: canvas.width / 2 + (Math.random() * 60 - 30),
+        y: 80,
+        dx: (Math.random() > 0.5 ? 1 : -1) * (1.8 + Math.random() * 2.2),
+        dy: config.baseSpeed + (balls.length * 0.15),
+        isMaster: isMaster
+    };
+}
+
+function reset() {
+    initAudio();
+    balls = [createBall(true)];
+    stability = 100;
+    masterHits = 0;
+    gameOver = false;
+    initBtn.style.display = 'none';
+    updateUI();
+}
+
+function updateUI() {
+    stabilityEl.textContent = Math.max(0, Math.floor(stability));
+    countEl.textContent = balls.length;
+    
+    if (stability < 30) {
+        messageEl.style.opacity = 0.7;
+        messageEl.textContent = "YOU ARE DODGING YOURSELF AGAIN";
+    } else {
+        messageEl.style.opacity = 0;
     }
-    checkTime();
-    loop();
+}
+
+function update() {
+    if (gameOver || balls.length === 0) return;
+    updateAudio();
+
+    for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        b.x += b.dx;
+        b.y += b.dy;
+
+        // Wall bounce
+        if (b.x <= 0 || b.x + config.ballSize >= canvas.width) {
+            b.dx *= -1;
+            playHitSound(false);
+        }
+        if (b.y <= 0) {
+            b.dy *= -1;
+            playHitSound(false);
+        }
+
+        // Bottom hit
+        if (b.y + config.ballSize >= canvas.height) {
+            b.dy *= -1;
+            playHitSound(true);
+
+            if (b.isMaster) {
+                masterHits++;
+                stability = Math.max(0, stability - 7);
+                
+                if (masterHits % 4 === 0 && balls.length < 6) {
+                    balls.push(createBall(false));
+                }
+            } else {
+                stability = Math.max(0, stability - 4);
+            }
+
+            updateUI();
+        }
+
+        // Paddle collision = game over (you finally caught yourself)
+        if (b.x + config.ballSize > paddle.x && 
+            b.x < paddle.x + paddle.w &&
+            b.y + config.ballSize > paddle.y && 
+            b.y < paddle.y + paddle.h) {
+            
+            gameOver = true;
+            masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 1.2);
+            initBtn.style.display = 'block';
+            messageEl.textContent = "YOU FINALLY CAUGHT YOURSELF";
+            messageEl.style.opacity = 1;
+        }
+    }
+
+    if (stability <= 0) {
+        gameOver = true;
+        initBtn.style.display = 'block';
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Paddle
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(paddle.x, paddle.y, paddle.w, paddle.h);
+
+    // Balls
+    balls.forEach(b => {
+        ctx.strokeStyle = b.isMaster ? '#ff3366' : '#666';
+        ctx.lineWidth = b.isMaster ? 3 : 2;
+        ctx.strokeRect(b.x, b.y, config.ballSize, config.ballSize);
+    });
+
+    if (gameOver) {
+        ctx.fillStyle = '#ff3366';
+        ctx.font = 'bold 15px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText("SYSTEM COLLAPSE", canvas.width/2, canvas.height/2 - 20);
+        ctx.font = '12px monospace';
+        ctx.fillText("you survived yourself", canvas.width/2, canvas.height/2 + 20);
+    }
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// Input
+function movePaddle(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    paddle.x = (clientX - rect.left) * (canvas.width / rect.width) - paddle.w / 2;
+    if (paddle.x < 0) paddle.x = 0;
+    if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+}
+
+canvas.addEventListener('mousemove', movePaddle);
+canvas.addEventListener('touchmove', e => { movePaddle(e); e.preventDefault(); }, {passive: false});
+
+initBtn.onclick = reset;
+
+// Start
+updateUI();
+loop();
 </script>
 </body>
 </html>

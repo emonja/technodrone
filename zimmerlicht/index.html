@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECHNODRONE — SISTEMA AGUA / LUZ</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'IBM Plex Sans', system-ui, sans-serif;
+            line-height: 1.65;
+            font-size: 15px;
+        }
+        
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        
+        header {
+            margin-bottom: 80px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 40px;
+        }
+        
+        h1 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 42px;
+            font-weight: 600;
+            letter-spacing: -2px;
+            margin: 0 0 12px 0;
+            text-transform: uppercase;
+        }
+        
+        .subtitle {
+            font-size: 13px;
+            letter-spacing: 3px;
+            opacity: 0.7;
+            margin: 0;
+        }
+        
+        .section {
+            margin-bottom: 70px;
+        }
+        
+        .section-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .section h2 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 19px;
+            margin: 0 0 18px 0;
+            letter-spacing: 0.5px;
+        }
+        
+        p, li {
+            max-width: 680px;
+            margin-bottom: 18px;
+        }
+        
+        ul {
+            padding-left: 22px;
+        }
+        
+        .highlight {
+            color: #a0d8ff;
+            font-style: italic;
+        }
+        
+        .presocratic {
+            border-left: 3px solid #555;
+            padding-left: 24px;
+            margin: 40px 0;
+            font-size: 15.5px;
+            color: #ccc;
+        }
+        
+        footer {
+            margin-top: 100px;
+            padding-top: 40px;
+            border-top: 1px solid #333;
+            font-size: 13px;
+            opacity: 0.6;
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        .tagline {
+            font-size: 13px;
+            letter-spacing: 4px;
+            margin: 60px 0 20px;
+            text-align: center;
+            opacity: 0.75;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <header>
+            <h1>TECHNODRONE — SISTEMA AGUA / LUZ</h1>
+            <p class="subtitle">TECHNODRONE / DOCUMENTO DE CAMPO / PROTOCOLO ACTIVO</p>
+        </header>
+
+        <div class="section">
+            <span class="section-num">00 — ORIGEN</span>
+            <h2>Dispositivo Presocrático</h2>
+            <p>Un instrumento filosófico contemporáneo que hace visible las <span class="highlight">vías</span> invisibles — los conductos ocultos que unen elemento con elemento, potencial con manifestación.</p>
+            <p>Se vierte agua. Un circuito se cierra. La luz ultravioleta despierta lo que siempre estuvo latente. El chorro que cae se convierte en un filamento luminoso — un cuerpo momentáneo de luz nacido del encuentro entre lo líquido y una fuerza invisible.</p>
+        </div>
+
+        <div class="section">
+            <span class="section-num">01 — INICIO</span>
+            <h2>La Pregunta Elemental</h2>
+            <p>Antes de Aristóteles, antes de que el mito cediera paso a la medición, los presocráticos se hacían las mismas preguntas que hoy seguimos formulando con nuestras máquinas:</p>
+            <ul>
+                <li>¿Cuál es la sustancia fundamental (<em>arché</em>)?</li>
+                <li>¿Qué principio ordenador invisible (<em>logos</em>) dirige todas las cosas mientras todo fluye?</li>
+                <li>¿Cómo se encuentran, se mezclan y se transforman los elementos a través de vías ocultas?</li>
+            </ul>
+            <p class="presocratic">
+                Tales vio en el agua el origen de todas las cosas.<br>
+                Heráclito enseñó que no podemos bañarnos dos veces en el mismo río.<br>
+                Empédocles habló del Amor y la Discordia como las fuerzas que unen y separan las cuatro raíces.
+            </p>
+            <p>Este dispositivo no simula. <em>Enactúa</em> la antigua indagación utilizando las herramientas de nuestra contemporaneidad.</p>
+        </div>
+
+        <div class="section">
+            <span class="section-num">02 — CONDUCTO</span>
+            <h2>La Vía Invisible</h2>
+            <p>Dos electrodos descansan dentro de un embudo de plástico. Debajo hay un recipiente con agua tónica. Cuando se vierte el agua, cierra momentáneamente un circuito eléctrico — una <em>vía</em> invisible que siempre estuvo presente en la conductividad del líquido.</p>
+            <p>El Arduino (con Firmata estándar) envía la lectura analógica a Max/MSP a través de Maxuino. Max traduce el contacto en comandos que activan la luz UV. La quinina del agua tónica fluoresce. El chorro ordinario se vuelve luminoso, casi vivo.</p>
+            <p>El filamento luminoso no es decoración. Es la huella visible de la relación invisible entre el agua y la energía.</p>
+        </div>
+
+        <div class="section">
+            <span class="section-num">03 — INMERSIÓN</span>
+            <h2>Reencantamiento a Través de la Tecnología</h2>
+            <p>Allá donde el <em>Índice de corazonadas</em> de Rafael Lozano-Hemmer hace visible y colectivo el pulso íntimo del cuerpo humano, este sistema hace visible el pulso de un <em>elemento</em>.</p>
+            <p>Propone un tipo distinto de rehumanización: no solo del sujeto a través de la máquina, sino de nuestra relación con el mundo material mismo. Aquí la tecnología no aliena — revela la vida oculta que ya está presente en el agua, la luz y el flujo.</p>
+        </div>
+
+        <div class="section">
+            <span class="section-num">04 — CONTEXTO</span>
+            <h2>En un Contexto Universitario Mexicano</h2>
+            <p>El agua nunca es neutra en México. Lleva consigo cosmologías indígenas, historias coloniales de control y extracción, y luchas contemporáneas urgentes por el acceso, la sequía y los derechos.</p>
+            <p>El filamento luminoso puede abrir suavemente estas capas: la misma sustancia por la que luchamos en las calles se vuelve momentáneamente poética y filosófica en el laboratorio. El dispositivo invita a los estudiantes a sentir tanto la maravilla como el peso.</p>
+        </div>
+
+        <div class="section">
+            <span class="section-num">05 — PROTOCOLO PARA CLASE</span>
+            <h2>Desafío del Segundo Día</h2>
+            <p>Los estudiantes reciben un pre-prototipo funcional (Arduino Mega + patch en Max/MSP). Su tarea es comprender, extender y ajustar el sistema de manera colectiva.</p>
+            <p>Exploran preguntas como:</p>
+            <ul>
+                <li>¿Cómo hacemos legible al público la <em>vía</em> invisible?</li>
+                <li>¿Qué sucede cuando varias personas vierten agua al mismo tiempo?</li>
+                <li>¿Cómo pueden los LEDs ambientales transformar toda la sala en una pregunta presocrática?</li>
+                <li>¿Qué cambia cuando imaginamos este dispositivo fuera del estudio — en una plaza, un mercado o un cauce seco?</li>
+            </ul>
+        </div>
+
+        <div class="tagline">
+            TECHNODRONE — SEÑAL / MATERIA / PERCEPCIÓN
+        </div>
+
+        <footer>
+            emonja / repositorio TECHNODRONE<br>
+            Curso de Instalación Artística — Tecnológico de Monterrey - Campus Guadalajara<br>
+            Marco conceptual • Abril 2026
+        </footer>
+
+    </div>
+</body>
+</html>

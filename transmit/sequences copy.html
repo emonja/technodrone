@@ -16,8 +16,8 @@
             padding: 8px; font-family: inherit; margin-top: 10px; width: 100%; cursor: pointer;
         }
         .stats { font-size: 0.8em; margin-top: 15px; opacity: 0.8; line-height: 1.5; }
-        .voice-a { color: #ff4e00; }
-        .voice-b { color: #00f2ff; }
+        .voice-a { color: #ff4e00; } /* Your Color */
+        .voice-b { color: #00f2ff; } /* Visitor Color */
         hr { border: 0; border-top: 1px solid #441a00; margin: 15px 0; }
     </style>
 </head>
@@ -55,6 +55,7 @@
 
         async function init() {
             try {
+                // Load both entities
                 const [resA, resB] = await Promise.all([
                     fetch('transmit.json'),
                     fetch('scouts.json')
@@ -62,37 +63,23 @@
                 dataA = Object.values(await resA.json());
                 dataB = Object.values(await resB.json());
                 
+                // Index months from both datasets to find the overlap
                 const monthsFound = new Set();
                 [...dataA, ...dataB].forEach(p => {
                     const d = new Date(p.timestamp);
                     monthsFound.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
                 });
 
-                const sortedMonths = Array.from(monthsFound).sort().reverse();
-                sortedMonths.forEach(m => {
+                Array.from(monthsFound).sort().reverse().forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m;
                     opt.innerText = `BANK: ${m}`;
                     monthSelector.appendChild(opt);
                 });
-
-                // Set initial month immediately
-                if(sortedMonths.length > 0) currentMonth = sortedMonths[0];
-
             } catch (e) { console.error("Data Missing."); }
         }
 
-        // --- THE HOT SWAP FIX ---
-        monthSelector.addEventListener('change', (e) => {
-            currentMonth = e.target.value;
-            // If the clock is running, we don't reset playDay, 
-            // we just let it keep ticking in the new month.
-            console.log(`HOT SWAP: Bank changed to ${currentMonth}`);
-        });
-
         function sequencerTick() {
-            if (!currentMonth) return;
-
             const [year, month] = currentMonth.split('-');
             const targetDate = `${year}-${month}-${String(playDay).padStart(2, '0')}`;
             const startTS = new Date(`${targetDate}T00:00:00`).getTime();
@@ -105,9 +92,11 @@
             document.getElementById('count-a').innerText = ptsA.length;
             document.getElementById('count-b').innerText = ptsB.length;
 
+            // Visual persistence
             ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Calculate shared bounds so they occupy the same space
             const allPoints = [...ptsA, ...ptsB];
             if (allPoints.length < 2) {
                 playDay = (playDay % 31) + 1;
@@ -124,6 +113,7 @@
                 y: canvas.height - (((p.lat - minLat) / (maxLat - minLat || 1)) * (canvas.height - 300) + 150)
             });
 
+            // Draw Voice B (Visitors) - Back Layer
             if (ptsB.length > 1) {
                 ctx.beginPath();
                 ctx.strokeStyle = '#00f2ff';
@@ -136,6 +126,7 @@
                 ctx.stroke();
             }
 
+            // Draw Voice A (You) - Top Layer
             if (ptsA.length > 1) {
                 ctx.beginPath();
                 ctx.strokeStyle = '#ff4e00';
@@ -156,8 +147,9 @@
                 clearInterval(timer);
                 playBtn.innerText = "START DUAL CLOCK";
             } else {
+                currentMonth = monthSelector.value;
                 playDay = 1;
-                timer = setInterval(sequencerTick, 250); 
+                timer = setInterval(sequencerTick, 250); // 4 steps per second
                 playBtn.innerText = "STOP CLOCK";
             }
             isPlaying = !isPlaying;

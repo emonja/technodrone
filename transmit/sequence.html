@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL: GEO-GATE-SEQUENCER</title>
+    <style>
+        body { margin: 0; background: #020202; color: #00ff41; font-family: 'Courier New', monospace; overflow: hidden; }
+        canvas { display: block; filter: contrast(1.5) brightness(1.2) drop-shadow(0 0 10px rgba(0,255,65,0.2)); }
+        
+        .ui { 
+            position: absolute; top: 20px; left: 20px; 
+            background: rgba(0,0,0,0.95); padding: 20px; 
+            border: 1px solid #00ff41; border-radius: 4px; 
+            z-index: 10; width: 240px; box-shadow: 0 0 20px rgba(0,255,65,0.1);
+        }
+
+        .gate-indicator {
+            display: inline-block; width: 12px; height: 12px;
+            border-radius: 50%; background: #111; border: 1px solid #004400;
+            margin-right: 8px; transition: all 0.05s;
+        }
+        .gate-high { background: #00ff41; box-shadow: 0 0 10px #00ff41; border-color: #fff; }
+
+        select, button { 
+            background: #000; color: #00ff41; border: 1px solid #00ff41; 
+            padding: 10px; font-family: inherit; margin-top: 10px; width: 100%; cursor: pointer;
+            text-transform: uppercase; font-weight: bold;
+        }
+
+        .stats { font-size: 0.8em; margin-top: 15px; opacity: 0.8; line-height: 1.6; }
+        .data-val { color: #fff; float: right; }
+        hr { border: 0; border-top: 1px solid #004400; margin: 15px 0; }
+
+        /* The rhythmic pulse light */
+        #pulse { width: 100%; height: 2px; background: #004400; margin-top: 10px; position: relative; }
+        #pulse-bar { height: 100%; width: 0%; background: #00ff41; }
+    </style>
+</head>
+<body>
+
+    <div class="ui">
+        <div style="letter-spacing: 2px;">[ GATE_SEQUENCER ]</div>
+        <div id="pulse"><div id="pulse-bar"></div></div>
+        <hr>
+        <label>SELECT_PHASE:</label>
+        <select id="monthSelector"></select>
+        <button id="playBtn">START CLOCK</button>
+        
+        <div class="stats">
+            <div id="gate-light" class="gate-indicator"></div> STATUS: <span id="gate-text" class="data-val">LOW</span><br>
+            TIME_INDEX: <span id="current-day" class="data-val">--</span><br>
+            VECTOR_SUM: <span id="point-count" class="data-val">0</span>
+        </div>
+    </div>
+
+    <canvas id="viz"></canvas>
+
+    <script>
+        const canvas = document.getElementById('viz');
+        const ctx = canvas.getContext('2d');
+        const monthSelector = document.getElementById('monthSelector');
+        const playBtn = document.getElementById('playBtn');
+        const pulseBar = document.getElementById('pulse-bar');
+        
+        let allData = [];
+        let isPlaying = false;
+        let playDay = 1; // 1 to 31
+        let timer = null;
+        let currentMonthStr = "";
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        async function init() {
+            try {
+                const response = await fetch('transmit.json');
+                const json = await response.json();
+                allData = Object.values(json);
+                
+                // Index available months
+                const monthsFound = new Set();
+                allData.forEach(p => {
+                    const d = new Date(p.timestamp);
+                    monthsFound.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                });
+
+                Array.from(monthsFound).sort().reverse().forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.innerText = `BANK: ${m}`;
+                    monthSelector.appendChild(opt);
+                });
+            } catch (e) { console.error("Data Load Error"); }
+        }
+
+        function sequencerTick() {
+            const year = currentMonthStr.split('-')[0];
+            const month = currentMonthStr.split('-')[1];
+            
+            // Format day to YYYY-MM-DD
+            const formattedDay = `${year}-${month}-${String(playDay).padStart(2, '0')}`;
+            
+            // Logic: Filter for the target day
+            const startTimestamp = new Date(`${formattedDay}T00:00:00`).getTime();
+            const endTimestamp = startTimestamp + 86400000;
+            const dayPoints = allData.filter(p => p.timestamp >= startTimestamp && p.timestamp < endTimestamp);
+
+            // Update UI
+            document.getElementById('current-day').innerText = formattedDay;
+            pulseBar.style.width = `${(playDay / 31) * 100}%`;
+
+            if (dayPoints.length > 0) {
+                // GATE HIGH
+                document.getElementById('gate-light').classList.add('gate-high');
+                document.getElementById('gate-text').innerText = "HIGH";
+                renderDay(dayPoints);
+            } else {
+                // GATE LOW
+                document.getElementById('gate-light').classList.remove('gate-high');
+                document.getElementById('gate-text').innerText = "LOW";
+                document.getElementById('point-count').innerText = "0";
+                // Flash of emptiness
+                ctx.fillStyle = 'rgba(2, 2, 2, 0.6)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Loop logic (1 to 31)
+            playDay++;
+            if (playDay > 31) playDay = 1;
+        }
+
+        function renderDay(points) {
+            document.getElementById('point-count').innerText = points.length;
+
+            // Phosphorus fade
+            ctx.fillStyle = 'rgba(2, 2, 2, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const lats = points.map(p => p.lat);
+            const lngs = points.map(p => p.lng);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
+            ctx.lineJoin = "round";
+
+            points.forEach((p, i) => {
+                const x = ((p.lng - minLng) / (maxLng - minLng || 1)) * (canvas.width - 400) + 200;
+                const y = canvas.height - (((p.lat - minLat) / (maxLat - minLat || 1)) * (canvas.height - 400) + 200);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                // Draw nodes
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x-1, y-1, 2, 2);
+            });
+            ctx.stroke();
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                clearInterval(timer);
+                playBtn.innerText = "START CLOCK";
+            } else {
+                currentMonthStr = monthSelector.value;
+                playDay = 1; // Start at beginning of month
+                timer = setInterval(sequencerTick, 200); // 200ms = 5Hz clock
+                playBtn.innerText = "STOP CLOCK";
+            }
+            isPlaying = !isPlaying;
+        });
+
+        init();
+    </script>
+</body>
+</html>

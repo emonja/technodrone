@@ -30,78 +30,96 @@
 
     <script>
         const canvas = document.getElementById('viz');
-        const ctx = canvas.getContext('2d');
-        const datePicker = document.getElementById('datePicker');
-        let allData = [];
+const ctx = canvas.getContext('2d');
+const datePicker = document.getElementById('datePicker');
+let allData = [];
+let activeDates = new Set(); // Store "YYYY-MM-DD" strings
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-        // 1. Auto-load on startup
-        async function init() {
-            try {
-                const response = await fetch('transmit.json');
-                const json = await response.json();
-                allData = Object.values(json);
-                
-                // Set the picker to the last date in the file as default
-                if(allData.length > 0) {
-                    const lastDate = new Date(allData[allData.length-1].timestamp).toISOString().split('T')[0];
-                    datePicker.value = lastDate;
-                    renderDay(lastDate);
-                }
-            } catch (e) {
-                document.getElementById('source-info').innerText = "ERROR: transmit.json not found";
-            }
-        }
-
-        function renderDay(selectedDate) {
-            // Convert selectedDate string to start/end of that day
-            const startOfDay = new Date(selectedDate).getTime();
-            const endOfDay = startOfDay + 86400000;
-
-            const dayPoints = allData.filter(p => p.timestamp >= startOfDay && p.timestamp < endOfDay);
-            
-            document.getElementById('point-count').innerText = `POINTS FOUND: ${dayPoints.length}`;
-
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (dayPoints.length < 2) return;
-
-            // Normalize bounds for this specific day
-            const lats = dayPoints.map(p => p.lat);
-            const lngs = dayPoints.map(p => p.lng);
-            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-            const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-
-            // Draw the "Ghost Path"
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(0, 255, 65, 0.3)';
-            ctx.lineWidth = 1;
-
-            dayPoints.forEach((p, i) => {
-                const x = ((p.lng - minLng) / (maxLng - minLng || 1)) * (canvas.width - 200) + 100;
-                const y = canvas.height - (((p.lat - minLat) / (maxLat - minLat || 1)) * (canvas.height - 200) + 100);
-
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-                
-                // Draw a pixel for each point
-                ctx.fillStyle = '#00ff41';
-                ctx.fillRect(x-1, y-1, 3, 3);
-            });
-            ctx.stroke();
-        }
-
-        datePicker.addEventListener('change', (e) => renderDay(e.target.value));
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            renderDay(datePicker.value);
+async function init() {
+    try {
+        const response = await fetch('transmit.json');
+        const json = await response.json();
+        allData = Object.values(json);
+        
+        // 1. Catalog all days that actually have points
+        allData.forEach(p => {
+            const dateStr = new Date(p.timestamp).toISOString().split('T')[0];
+            activeDates.add(dateStr);
         });
 
-        init();
+        if(allData.length > 0) {
+            // Sort active dates so we can find the limits
+            const sortedDates = Array.from(activeDates).sort();
+            datePicker.min = sortedDates[0];
+            datePicker.max = sortedDates[sortedDates.length - 1];
+            
+            // Set default to the last known active day
+            const lastDate = sortedDates[sortedDates.length - 1];
+            datePicker.value = lastDate;
+            renderDay(lastDate);
+            
+            console.log(`📡 System indexed ${activeDates.size} active sessions.`);
+        }
+    } catch (e) {
+        document.getElementById('source-info').innerText = "ERROR: transmit.json not found";
+    }
+}
+
+function renderDay(selectedDate) {
+    // 2. CHECK: Is this date in our active set?
+    if (!activeDates.has(selectedDate)) {
+        document.getElementById('point-count').innerText = "STATUS: NO SIGNAL ON THIS DATE";
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Optional glitch effect or "No Signal" text here
+        return;
+    }
+
+    const startOfDay = new Date(selectedDate + "T00:00:00").getTime();
+    const endOfDay = startOfDay + 86400000;
+
+    const dayPoints = allData.filter(p => p.timestamp >= startOfDay && p.timestamp < endOfDay);
+    
+    document.getElementById('point-count').innerText = `POINTS FOUND: ${dayPoints.length}`;
+
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (dayPoints.length < 2) return;
+
+    const lats = dayPoints.map(p => p.lat);
+    const lngs = dayPoints.map(p => p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(0, 255, 65, 0.4)';
+    ctx.lineWidth = 1;
+
+    dayPoints.forEach((p, i) => {
+        const x = ((p.lng - minLng) / (maxLng - minLng || 1)) * (canvas.width - 200) + 100;
+        const y = canvas.height - (((p.lat - minLat) / (maxLat - minLat || 1)) * (canvas.height - 200) + 100);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        
+        ctx.fillStyle = '#00ff41';
+        ctx.fillRect(x-1, y-1, 2, 2);
+    });
+    ctx.stroke();
+}
+
+datePicker.addEventListener('change', (e) => renderDay(e.target.value));
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    renderDay(datePicker.value);
+});
+
+init();
     </script>
 </body>
 </html>

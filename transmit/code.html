@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL: GEODATA</title>
+    <style>
+        body { margin: 0; background: #050505; color: #00ff41; font-family: 'Courier New', monospace; overflow: hidden; }
+        canvas { display: block; filter: contrast(1.2) brightness(1.2); }
+        .ui { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00ff41; border-radius: 4px; z-index: 10; }
+        input[type="date"] { 
+            background: #000; color: #00ff41; border: 1px solid #00ff41; 
+            padding: 5px; font-family: inherit; margin-top: 10px; cursor: pointer;
+        }
+        .stats { font-size: 0.8em; margin-top: 15px; opacity: 0.8; }
+        hr { border: 0; border-top: 1px solid #00ff41; margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="ui">
+        <div style="font-weight: bold;">[ SYSTEM STATUS: ACTIVE ]</div>
+        <div class="stats" id="source-info">FILE: transmit.json</div>
+        <hr>
+        <label>TARGET_DATE:</label><br>
+        <input type="date" id="datePicker">
+        <div class="stats" id="point-count">POINTS: LOADING...</div>
+    </div>
+
+    <canvas id="viz"></canvas>
+
+    <script>
+        const canvas = document.getElementById('viz');
+        const ctx = canvas.getContext('2d');
+        const datePicker = document.getElementById('datePicker');
+        let allData = [];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 1. Auto-load on startup
+        async function init() {
+            try {
+                const response = await fetch('transmit.json');
+                const json = await response.json();
+                allData = Object.values(json);
+                
+                // Set the picker to the last date in the file as default
+                if(allData.length > 0) {
+                    const lastDate = new Date(allData[allData.length-1].timestamp).toISOString().split('T')[0];
+                    datePicker.value = lastDate;
+                    renderDay(lastDate);
+                }
+            } catch (e) {
+                document.getElementById('source-info').innerText = "ERROR: transmit.json not found";
+            }
+        }
+
+        function renderDay(selectedDate) {
+            // Convert selectedDate string to start/end of that day
+            const startOfDay = new Date(selectedDate).getTime();
+            const endOfDay = startOfDay + 86400000;
+
+            const dayPoints = allData.filter(p => p.timestamp >= startOfDay && p.timestamp < endOfDay);
+            
+            document.getElementById('point-count').innerText = `POINTS FOUND: ${dayPoints.length}`;
+
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (dayPoints.length < 2) return;
+
+            // Normalize bounds for this specific day
+            const lats = dayPoints.map(p => p.lat);
+            const lngs = dayPoints.map(p => p.lng);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+            // Draw the "Ghost Path"
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(0, 255, 65, 0.3)';
+            ctx.lineWidth = 1;
+
+            dayPoints.forEach((p, i) => {
+                const x = ((p.lng - minLng) / (maxLng - minLng || 1)) * (canvas.width - 200) + 100;
+                const y = canvas.height - (((p.lat - minLat) / (maxLat - minLat || 1)) * (canvas.height - 200) + 100);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                
+                // Draw a pixel for each point
+                ctx.fillStyle = '#00ff41';
+                ctx.fillRect(x-1, y-1, 3, 3);
+            });
+            ctx.stroke();
+        }
+
+        datePicker.addEventListener('change', (e) => renderDay(e.target.value));
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            renderDay(datePicker.value);
+        });
+
+        init();
+    </script>
+</body>
+</html>

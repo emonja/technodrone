@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL: DUAL-VOICE-SEQUENCER</title>
+    <style>
+        body { margin: 0; background: #050505; color: #ff4e00; font-family: 'Courier New', monospace; overflow: hidden; }
+        canvas { display: block; filter: contrast(1.2) brightness(1.2); }
+        .ui { 
+            position: absolute; top: 20px; left: 20px; 
+            background: rgba(0,0,0,0.9); padding: 20px; 
+            border: 1px solid #ff4e00; border-radius: 4px; z-index: 10; width: 260px;
+        }
+        select, button { 
+            background: #000; color: #ff4e00; border: 1px solid #ff4e00; 
+            padding: 8px; font-family: inherit; margin-top: 10px; width: 100%; cursor: pointer;
+        }
+        .stats { font-size: 0.8em; margin-top: 15px; opacity: 0.8; line-height: 1.5; }
+        .voice-a { color: #ff4e00; } /* Your Color */
+        .voice-b { color: #00f2ff; } /* Visitor Color */
+        hr { border: 0; border-top: 1px solid #441a00; margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="ui">
+        <div style="font-weight: bold;">[ DUAL_PHASE_SEQUENCER ]</div>
+        <hr>
+        <label>SELECT_MONTH:</label>
+        <select id="monthSelector"></select>
+        <button id="playBtn">START DUAL CLOCK</button>
+        <div class="stats">
+            DAY: <span id="current-day" style="color:#fff">--</span><br>
+            <span class="voice-a">VOICE_A (YOU):</span> <span id="count-a" class="voice-a">0</span><br>
+            <span class="voice-b">VOICE_B (VISITORS):</span> <span id="count-b" class="voice-b">0</span>
+        </div>
+    </div>
+
+    <canvas id="viz"></canvas>
+
+    <script>
+        const canvas = document.getElementById('viz');
+        const ctx = canvas.getContext('2d');
+        const monthSelector = document.getElementById('monthSelector');
+        const playBtn = document.getElementById('playBtn');
+        
+        let dataA = [], dataB = [];
+        let isPlaying = false;
+        let playDay = 1;
+        let timer = null;
+        let currentMonth = "";
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        async function init() {
+            try {
+                // Load both entities
+                const [resA, resB] = await Promise.all([
+                    fetch('transmit.json'),
+                    fetch('scouts.json')
+                ]);
+                dataA = Object.values(await resA.json());
+                dataB = Object.values(await resB.json());
+                
+                // Index months from both datasets to find the overlap
+                const monthsFound = new Set();
+                [...dataA, ...dataB].forEach(p => {
+                    const d = new Date(p.timestamp);
+                    monthsFound.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                });
+
+                Array.from(monthsFound).sort().reverse().forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.innerText = `BANK: ${m}`;
+                    monthSelector.appendChild(opt);
+                });
+            } catch (e) { console.error("Data Missing."); }
+        }
+
+        function sequencerTick() {
+            const [year, month] = currentMonth.split('-');
+            const targetDate = `${year}-${month}-${String(playDay).padStart(2, '0')}`;
+            const startTS = new Date(`${targetDate}T00:00:00`).getTime();
+            const endTS = startTS + 86400000;
+
+            const ptsA = dataA.filter(p => p.timestamp >= startTS && p.timestamp < endTS);
+            const ptsB = dataB.filter(p => p.timestamp >= startTS && p.timestamp < endTS);
+
+            document.getElementById('current-day').innerText = targetDate;
+            document.getElementById('count-a').innerText = ptsA.length;
+            document.getElementById('count-b').innerText = ptsB.length;
+
+            // Visual persistence
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate shared bounds so they occupy the same space
+            const allPoints = [...ptsA, ...ptsB];
+            if (allPoints.length < 2) {
+                playDay = (playDay % 31) + 1;
+                return;
+            }
+
+            const lats = allPoints.map(p => p.lat);
+            const lngs = allPoints.map(p => p.lng);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+            const map = (p) => ({
+                x: ((p.lng - minLng) / (maxLng - minLng || 1)) * (canvas.width - 300) + 150,
+                y: canvas.height - (((p.lat - minLat) / (maxLat - minLat || 1)) * (canvas.height - 300) + 150)
+            });
+
+            // Draw Voice B (Visitors) - Back Layer
+            if (ptsB.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#00f2ff';
+                ctx.lineWidth = 1;
+                ptsB.forEach((p, i) => {
+                    const pos = map(p);
+                    if (i === 0) ctx.moveTo(pos.x, pos.y);
+                    else ctx.lineTo(pos.x, pos.y);
+                });
+                ctx.stroke();
+            }
+
+            // Draw Voice A (You) - Top Layer
+            if (ptsA.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#ff4e00';
+                ctx.lineWidth = 2;
+                ptsA.forEach((p, i) => {
+                    const pos = map(p);
+                    if (i === 0) ctx.moveTo(pos.x, pos.y);
+                    else ctx.lineTo(pos.x, pos.y);
+                });
+                ctx.stroke();
+            }
+
+            playDay = (playDay % 31) + 1;
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                clearInterval(timer);
+                playBtn.innerText = "START DUAL CLOCK";
+            } else {
+                currentMonth = monthSelector.value;
+                playDay = 1;
+                timer = setInterval(sequencerTick, 250); // 4 steps per second
+                playBtn.innerText = "STOP CLOCK";
+            }
+            isPlaying = !isPlaying;
+        });
+
+        init();
+    </script>
+</body>
+</html>
